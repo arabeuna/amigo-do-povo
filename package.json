@@ -1,28 +1,24 @@
 {
-  "name": "amigo-do-povo-monorepo",
+  "name": "amigo-do-povo",
   "version": "1.0.0",
-  "description": "Sistema de Gestão da Associação Amigo do Povo - Monorepo",
+  "description": "Sistema de Gestão da Associação Amigo do Povo",
   "private": true,
-  "workspaces": [
-    "apps/*",
-    "packages/*"
-  ],
   "scripts": {
     "dev": "concurrently \"npm run dev:backend\" \"npm run dev:frontend\"",
-    "dev:backend": "cd apps/backend && npm run dev",
-    "dev:frontend": "cd apps/frontend && npm start",
+    "dev:backend": "cd backend && npm run dev",
+    "dev:frontend": "cd frontend && npm start",
     "build": "npm run build:backend && npm run build:frontend",
-    "build:backend": "cd apps/backend && npm run build",
-    "build:frontend": "cd apps/frontend && npm run build",
+    "build:backend": "cd backend && npm install",
+    "build:frontend": "cd frontend && npm install && npm run build",
     "start": "npm run start:backend",
-    "start:backend": "cd apps/backend && npm start",
-    "start:frontend": "cd apps/frontend && npm start",
+    "start:backend": "cd backend && npm start",
+    "start:frontend": "cd frontend && npm start",
     "install:all": "npm install && npm run install:backend && npm run install:frontend",
-    "install:backend": "cd apps/backend && npm install",
-    "install:frontend": "cd apps/frontend && npm install",
+    "install:backend": "cd backend && npm install",
+    "install:frontend": "cd frontend && npm install",
     "clean": "npm run clean:backend && npm run clean:frontend",
-    "clean:backend": "cd apps/backend && npm run clean",
-    "clean:frontend": "cd apps/frontend && npm run clean"
+    "clean:backend": "cd backend && npm run clean",
+    "clean:frontend": "cd frontend && npm run clean"
   },
   "devDependencies": {
     "concurrently": "^8.2.2"
@@ -33,7 +29,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/your-username/amigo-do-povo.git"
+    "url": "https://github.com/arabeuna/amigo-do-povo.git"
   },
   "keywords": [
     "gestão",
