@@ -20,14 +20,25 @@ export const AuthProvider = ({ children }) => {
   // Verificar se há um token válido ao inicializar
   useEffect(() => {
     const checkAuth = async () => {
+      console.log('🔄 Iniciando verificação de autenticação...');
       const storedToken = localStorage.getItem('token');
       const storedUser = localStorage.getItem('user');
+
+      console.log('📦 Dados armazenados:', { 
+        hasToken: !!storedToken, 
+        hasUser: !!storedUser 
+      });
 
       if (storedToken && storedUser) {
         try {
           setToken(storedToken);
           setUser(JSON.parse(storedUser));
           
+          console.log('✅ Dados carregados do localStorage');
+          
+          // Comentar temporariamente a verificação de token para debug
+          console.log('⏸️ Verificação de token desabilitada temporariamente');
+          /*
           // Verificar se o token ainda é válido
           const response = await authAPI.me();
           if (response.data.success) {
@@ -37,10 +48,14 @@ export const AuthProvider = ({ children }) => {
             // Token inválido, limpar dados
             logout();
           }
+          */
         } catch (error) {
-          console.error('Erro ao verificar autenticação:', error);
-          logout();
+          console.error('💥 Erro ao verificar autenticação:', error);
+          // Comentar logout temporariamente
+          // logout();
         }
+      } else {
+        console.log('❌ Nenhum token ou usuário encontrado no localStorage');
       }
       setLoading(false);
     };
