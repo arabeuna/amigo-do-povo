@@ -61,11 +61,19 @@ const Atividades = () => {
 
   const loadAtividades = async () => {
     try {
+      console.log('🔄 Carregando atividades...');
       setLoading(true);
       const response = await atividadesAPI.listar();
+      console.log('✅ Atividades carregadas:', response.data);
       setAtividades(response.data.data);
     } catch (error) {
-      console.error('Erro ao carregar atividades:', error);
+      console.error('💥 Erro ao carregar atividades:', error);
+      console.error('📋 Detalhes do erro:', {
+        message: error.message,
+        status: error.response?.status,
+        data: error.response?.data,
+        config: error.config
+      });
       toast.error('Erro ao carregar atividades');
     } finally {
       setLoading(false);
@@ -76,6 +84,8 @@ const Atividades = () => {
     e.preventDefault();
     
     try {
+      console.log('🔄 Salvando atividade...', formData);
+      
       if (editingAtividade) {
         await atividadesAPI.atualizar(editingAtividade.id, formData);
         toast.success('Atividade atualizada com sucesso!');
@@ -89,7 +99,13 @@ const Atividades = () => {
       resetForm();
       loadAtividades();
     } catch (error) {
-      console.error('Erro ao salvar atividade:', error);
+      console.error('💥 Erro ao salvar atividade:', error);
+      console.error('📋 Detalhes do erro:', {
+        message: error.message,
+        status: error.response?.status,
+        data: error.response?.data,
+        config: error.config
+      });
       toast.error('Erro ao salvar atividade');
     }
   };
