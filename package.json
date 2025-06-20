@@ -21,9 +21,11 @@
     "clean:backend": "cd apps/backend && npm run clean",
     "clean:frontend": "cd apps/frontend && npm run clean"
   },
-  "devDependencies": {
-    "concurrently": "^8.2.2",
+  "dependencies": {
     "fs-extra": "^11.2.0"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2"
   },
   "engines": {
     "node": ">=18.0.0",
