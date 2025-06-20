@@ -4,9 +4,15 @@ const db = require('../config/database');
 const auth = async (req, res, next) => {
   try {
     console.log('🔐 Middleware de autenticação - iniciando...');
+    console.log('📡 URL da requisição:', req.url);
+    console.log('🔧 Método da requisição:', req.method);
+    
     const token = req.header('Authorization')?.replace('Bearer ', '');
     
     console.log('🎫 Token recebido:', token ? 'Sim' : 'Não');
+    if (token) {
+      console.log('🎫 Token (primeiros 20 chars):', token.substring(0, 20) + '...');
+    }
     
     if (!token) {
       console.log('❌ Token não fornecido');
@@ -17,6 +23,10 @@ const auth = async (req, res, next) => {
     }
 
     console.log('🔑 JWT_SECRET definido:', process.env.JWT_SECRET ? 'Sim' : 'Não');
+    if (process.env.JWT_SECRET) {
+      console.log('🔑 JWT_SECRET (primeiros 10 chars):', process.env.JWT_SECRET.substring(0, 10) + '...');
+    }
+    
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
     console.log('✅ Token decodificado:', { userId: decoded.userId, email: decoded.email });
     
@@ -27,6 +37,9 @@ const auth = async (req, res, next) => {
     );
 
     console.log('👤 Usuário encontrado no banco:', result.rows.length > 0);
+    if (result.rows.length > 0) {
+      console.log('👤 Dados do usuário:', result.rows[0]);
+    }
 
     if (result.rows.length === 0) {
       console.log('❌ Usuário não encontrado ou inativo');
@@ -41,6 +54,8 @@ const auth = async (req, res, next) => {
     next();
   } catch (error) {
     console.error('💥 Erro na autenticação:', error.message);
+    console.error('💥 Tipo do erro:', error.name);
+    console.error('💥 Stack trace:', error.stack);
     res.status(401).json({ 
       success: false, 
       message: 'Token inválido' 
