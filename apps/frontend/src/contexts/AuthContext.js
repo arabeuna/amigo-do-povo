@@ -50,11 +50,16 @@ export const AuthProvider = ({ children }) => {
 
   const login = async (email, senha) => {
     try {
+      console.log('🔐 Iniciando login...', { email });
       setLoading(true);
       const response = await authAPI.login({ email, senha });
       
+      console.log('📡 Resposta do login:', response.data);
+      
       if (response.data.success) {
         const { token: newToken, usuario } = response.data.data;
+        
+        console.log('✅ Login bem-sucedido, configurando dados...', { usuario });
         
         setToken(newToken);
         setUser(usuario);
@@ -62,14 +67,17 @@ export const AuthProvider = ({ children }) => {
         localStorage.setItem('token', newToken);
         localStorage.setItem('user', JSON.stringify(usuario));
         
+        console.log('💾 Dados salvos no localStorage');
+        
         toast.success('Login realizado com sucesso!');
         return { success: true };
       } else {
+        console.log('❌ Login falhou:', response.data.message);
         toast.error(response.data.message || 'Erro no login');
         return { success: false, message: response.data.message };
       }
     } catch (error) {
-      console.error('Erro no login:', error);
+      console.error('💥 Erro no login:', error);
       const message = error.response?.data?.message || 'Erro ao fazer login';
       toast.error(message);
       return { success: false, message };
@@ -144,7 +152,13 @@ export const AuthProvider = ({ children }) => {
   };
 
   const isAuthenticated = () => {
-    return !!token && !!user;
+    const authenticated = !!token && !!user;
+    console.log('🔍 Verificando autenticação:', { 
+      hasToken: !!token, 
+      hasUser: !!user, 
+      authenticated 
+    });
+    return authenticated;
   };
 
   const hasPermission = (permission) => {

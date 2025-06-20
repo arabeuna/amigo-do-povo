@@ -34,7 +34,7 @@ const AppContent = () => {
         {/* Rota pública */}
         <Route path="/login" element={<Login />} />
         
-        {/* Rotas protegidas */}
+        {/* Redirecionar raiz para dashboard */}
         <Route
           path="/"
           element={
@@ -56,9 +56,6 @@ const AppContent = () => {
             </ProtectedRoute>
           }
         />
-        
-        {/* Redirecionar para dashboard se acessar raiz */}
-        <Route path="/" element={<Navigate to="/dashboard" replace />} />
         
         {/* Rota 404 */}
         <Route
