@@ -73,13 +73,22 @@ export const AuthProvider = ({ children }) => {
         return { success: true };
       } else {
         console.log('❌ Login falhou:', response.data.message);
-        toast.error(response.data.message || 'Erro no login');
+        toast.error(`Login falhou: ${response.data.message}`);
         return { success: false, message: response.data.message };
       }
     } catch (error) {
       console.error('💥 Erro no login:', error);
       const message = error.response?.data?.message || 'Erro ao fazer login';
-      toast.error(message);
+      const status = error.response?.status;
+      const details = `Status: ${status} - ${message}`;
+      
+      toast.error(`Erro no login: ${details}`);
+      console.log('📋 Detalhes completos do erro:', {
+        status: error.response?.status,
+        data: error.response?.data,
+        config: error.config
+      });
+      
       return { success: false, message };
     } finally {
       setLoading(false);
