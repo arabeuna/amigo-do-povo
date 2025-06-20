@@ -5,6 +5,7 @@ import { AuthProvider, useAuth } from './contexts/AuthContext';
 import Login from './components/Login';
 import Dashboard from './components/Dashboard';
 import Layout from './components/Layout';
+import Atividades from './components/Atividades';
 import './index.css';
 
 // Componente para rotas protegidas
@@ -52,6 +53,17 @@ const AppContent = () => {
             <ProtectedRoute>
               <Layout>
                 <Dashboard />
+              </Layout>
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/atividades"
+          element={
+            <ProtectedRoute>
+              <Layout>
+                <Atividades />
               </Layout>
             </ProtectedRoute>
           }
