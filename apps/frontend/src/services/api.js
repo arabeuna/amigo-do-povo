@@ -1,8 +1,18 @@
 import axios from 'axios';
 
 // Configuração base do axios
+// Usa URL relativa quando servido pelo backend, ou localhost em desenvolvimento
+const getBaseURL = () => {
+  // Se estamos em produção e sendo servidos pelo backend, usa URL relativa
+  if (process.env.NODE_ENV === 'production') {
+    return '/api';
+  }
+  // Em desenvolvimento, usa localhost
+  return process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
+};
+
 const api = axios.create({
-  baseURL: process.env.REACT_APP_API_URL || 'http://localhost:5000/api',
+  baseURL: getBaseURL(),
   timeout: 10000,
   headers: {
     'Content-Type': 'application/json',
