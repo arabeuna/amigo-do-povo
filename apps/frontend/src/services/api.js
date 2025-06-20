@@ -47,13 +47,13 @@ api.interceptors.response.use(
     });
     
     if (error.response?.status === 401) {
-      console.log('🔒 Erro 401 detectado - fazendo logout automático');
+      console.log('🔒 Erro 401 detectado - NÃO fazendo logout automático por enquanto');
       console.log('📋 Detalhes do erro:', error.response?.data);
       
-      // Reabilitar logout automático
-      localStorage.removeItem('token');
-      localStorage.removeItem('user');
-      window.location.href = '/login';
+      // Comentar temporariamente o logout automático para debug
+      // localStorage.removeItem('token');
+      // localStorage.removeItem('user');
+      // window.location.href = '/login';
     }
     return Promise.reject(error);
   }
