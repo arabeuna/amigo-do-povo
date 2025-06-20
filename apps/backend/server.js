@@ -3,6 +3,7 @@ const cors = require('cors');
 const helmet = require('helmet');
 const compression = require('compression');
 const rateLimit = require('express-rate-limit');
+const path = require('path');
 require('dotenv').config();
 
 const { auth, authorize } = require('./middleware/auth');
@@ -43,6 +44,13 @@ app.use(cors({
 // Body parsing
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+
+// =====================================================
+// SERVIÇO DE ARQUIVOS ESTÁTICOS (FRONTEND)
+// =====================================================
+
+// Servir arquivos estáticos do frontend build
+app.use(express.static(path.join(__dirname, 'frontend')));
 
 // =====================================================
 // ROTAS PÚBLICAS
@@ -97,14 +105,12 @@ app.delete('/api/alunos/:id', authorize('admin'), alunosController.deletarAluno)
 app.get('/api/alunos/:id/matriculas', authorize('admin', 'instrutor', 'financeiro'), alunosController.buscarMatriculasAluno);
 
 // =====================================================
-// ROTA DE FALLBACK
+// ROTA DE FALLBACK PARA SPA (SINGLE PAGE APPLICATION)
 // =====================================================
 
-app.use('*', (req, res) => {
-  res.status(404).json({
-    success: false,
-    message: 'Rota não encontrada'
-  });
+// Para todas as outras rotas, servir o index.html do React
+app.get('*', (req, res) => {
+  res.sendFile(path.join(__dirname, 'frontend/index.html'));
 });
 
 // =====================================================
@@ -130,6 +136,7 @@ app.listen(PORT, () => {
   console.log(`📊 Ambiente: ${process.env.NODE_ENV || 'development'}`);
   console.log(`🔗 URL: http://localhost:${PORT}`);
   console.log(`📋 Health check: http://localhost:${PORT}/api/health`);
+  console.log(`🌐 Frontend: http://localhost:${PORT}`);
 });
 
 // Graceful shutdown
