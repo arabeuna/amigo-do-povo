@@ -9,6 +9,7 @@ require('dotenv').config();
 const { auth, authorize } = require('./middleware/auth');
 const authController = require('./controllers/authController');
 const alunosController = require('./controllers/alunosController');
+const atividadesController = require('./controllers/atividadesController');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -103,6 +104,14 @@ app.post('/api/alunos', authorize('admin'), alunosController.criarAluno);
 app.put('/api/alunos/:id', authorize('admin'), alunosController.atualizarAluno);
 app.delete('/api/alunos/:id', authorize('admin'), alunosController.deletarAluno);
 app.get('/api/alunos/:id/matriculas', authorize('admin', 'instrutor', 'financeiro'), alunosController.buscarMatriculasAluno);
+
+// Atividades
+app.get('/api/atividades', authorize('admin', 'instrutor', 'financeiro'), atividadesController.listarAtividades);
+app.get('/api/atividades/:id', authorize('admin', 'instrutor', 'financeiro'), atividadesController.buscarAtividadePorId);
+app.post('/api/atividades', authorize('admin'), atividadesController.criarAtividade);
+app.put('/api/atividades/:id', authorize('admin'), atividadesController.atualizarAtividade);
+app.delete('/api/atividades/:id', authorize('admin'), atividadesController.deletarAtividade);
+app.get('/api/atividades/tipos', authorize('admin', 'instrutor', 'financeiro'), atividadesController.listarTiposAtividades);
 
 // =====================================================
 // ROTA DE FALLBACK PARA SPA (SINGLE PAGE APPLICATION)
