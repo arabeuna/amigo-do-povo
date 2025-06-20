@@ -10,7 +10,7 @@
     "build": "npm run build:frontend && npm run copy:frontend",
     "build:backend": "cd apps/backend && npm install",
     "build:frontend": "cd apps/frontend && npm install && npm run build",
-    "copy:frontend": "if not exist apps\\backend\\frontend mkdir apps\\backend\\frontend && xcopy apps\\frontend\\build\\* apps\\backend\\frontend\\ /E /I /Y",
+    "copy:frontend": "node copy-frontend.js",
     "start": "npm run start:backend",
     "start:backend": "cd apps/backend && npm start",
     "start:frontend": "cd apps/frontend && npm start",
@@ -22,7 +22,8 @@
     "clean:frontend": "cd apps/frontend && npm run clean"
   },
   "devDependencies": {
-    "concurrently": "^8.2.2"
+    "concurrently": "^8.2.2",
+    "fs-extra": "^11.2.0"
   },
   "engines": {
     "node": ">=18.0.0",
