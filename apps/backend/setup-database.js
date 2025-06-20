@@ -68,7 +68,7 @@ async function setupDatabase() {
     if (adminCheck.rows.length === 0) {
       // Criar usuário admin padrão
       const saltRounds = 12;
-      const senhaCriptografada = await bcrypt.hash('admin123', saltRounds);
+      const senhaCriptografada = await bcrypt.hash('101520_Amigo', saltRounds);
       
       await pool.query(`
         INSERT INTO usuarios (nome, email, senha, perfil) 
@@ -77,7 +77,7 @@ async function setupDatabase() {
       
       console.log('✅ Usuário admin criado com sucesso');
       console.log('📧 Email: admin@amigodopovo.com');
-      console.log('🔑 Senha: admin123');
+      console.log('🔑 Senha: 101520_Amigo');
     } else {
       console.log('✅ Usuário admin já existe');
     }

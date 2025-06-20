@@ -27,7 +27,7 @@ const login = async (req, res) => {
     if (!dbAvailable) {
       console.log('⚠️ Banco não disponível, usando modo desenvolvimento');
       // Fallback para desenvolvimento - usuário padrão
-      if (email === 'admin@amigodopovo.com' && senha === 'admin123') {
+      if (email === 'admin@amigodopovo.com' && senha === '101520_Amigo') {
         console.log('✅ Credenciais de desenvolvimento válidas');
         console.log('🔑 JWT_SECRET:', process.env.JWT_SECRET ? 'Definido' : 'NÃO DEFINIDO');
         

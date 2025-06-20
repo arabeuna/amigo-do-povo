@@ -172,9 +172,9 @@ CREATE INDEX idx_mensalidades_vencimento ON mensalidades(data_vencimento);
 -- DADOS INICIAIS
 -- =====================================================
 
--- Usuário administrador padrão (senha: admin123)
+-- Usuário administrador padrão (senha: 101520_Amigo)
 INSERT INTO usuarios (nome, email, senha, perfil) VALUES 
-('Administrador', 'admin@amigodopovo.com', crypt('admin123', gen_salt('bf')), 'admin');
+('Administrador', 'admin@amigodopovo.com', crypt('101520_Amigo', gen_salt('bf')), 'admin');
 
 -- Tipos de atividades padrão
 INSERT INTO atividades (nome, descricao, tipo, valor_mensalidade) VALUES 

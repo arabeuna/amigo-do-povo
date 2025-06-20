@@ -183,7 +183,7 @@ npm start
 Após a instalação, você pode fazer login com:
 
 - **Email:** admin@amigodopovo.com
-- **Senha:** admin123
+- **Senha:** 101520_Amigo
 
 ## 📁 Estrutura do Projeto
 
