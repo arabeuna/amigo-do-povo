@@ -132,7 +132,12 @@ const Atividades = () => {
         toast.success('Atividade excluída com sucesso!');
         loadAtividades();
       } catch (error) {
-        console.error('Erro ao excluir atividade:', error);
+        console.error('💥 Erro ao excluir atividade:', error);
+        console.error('📋 Detalhes do erro:', {
+          message: error.message,
+          status: error.response?.status,
+          data: error.response?.data
+        });
         toast.error('Erro ao excluir atividade');
       }
     }
@@ -181,7 +186,7 @@ const Atividades = () => {
   };
 
   const formatValor = (valor) => {
-    if (!valor) return 'Não definido';
+    if (!valor || isNaN(valor)) return 'Não definido';
     return new Intl.NumberFormat('pt-BR', {
       style: 'currency',
       currency: 'BRL'
@@ -513,7 +518,10 @@ const Atividades = () => {
                       type="number"
                       min="1"
                       value={formData.vagas_maximas}
-                      onChange={(e) => setFormData({...formData, vagas_maximas: parseInt(e.target.value)})}
+                      onChange={(e) => {
+                        const value = e.target.value;
+                        setFormData({...formData, vagas_maximas: value ? parseInt(value) : 30});
+                      }}
                       className="input"
                     />
                   </div>
@@ -526,7 +534,10 @@ const Atividades = () => {
                       step="0.01"
                       min="0"
                       value={formData.valor_mensalidade}
-                      onChange={(e) => setFormData({...formData, valor_mensalidade: parseFloat(e.target.value)})}
+                      onChange={(e) => {
+                        const value = e.target.value;
+                        setFormData({...formData, valor_mensalidade: value ? parseFloat(value) : ''});
+                      }}
                       className="input"
                       placeholder="0.00"
                     />
