@@ -97,6 +97,18 @@ app.use('/api', auth);
 app.get('/api/auth/me', authController.me);
 app.put('/api/auth/alterar-senha', authController.alterarSenha);
 
+// Endpoint de teste para debug
+app.get('/api/test-auth', (req, res) => {
+  console.log('🧪 Endpoint de teste chamado');
+  console.log('👤 Usuário autenticado:', req.user);
+  res.json({
+    success: true,
+    message: 'Autenticação funcionando!',
+    user: req.user,
+    timestamp: new Date().toISOString()
+  });
+});
+
 // Alunos
 app.get('/api/alunos', authorize('admin', 'instrutor', 'financeiro'), alunosController.listarAlunos);
 app.get('/api/alunos/:id', authorize('admin', 'instrutor', 'financeiro'), alunosController.buscarAlunoPorId);
@@ -146,6 +158,17 @@ app.listen(PORT, () => {
   console.log(`🔗 URL: http://localhost:${PORT}`);
   console.log(`📋 Health check: http://localhost:${PORT}/api/health`);
   console.log(`🌐 Frontend: http://localhost:${PORT}`);
+  
+  // Verificar variáveis de ambiente importantes
+  console.log(`🔑 JWT_SECRET definido: ${process.env.JWT_SECRET ? 'Sim' : 'NÃO'}`);
+  if (process.env.JWT_SECRET) {
+    console.log(`🔑 JWT_SECRET length: ${process.env.JWT_SECRET.length}`);
+    console.log(`🔑 JWT_SECRET (primeiros 10 chars): ${process.env.JWT_SECRET.substring(0, 10)}...`);
+  }
+  
+  console.log(`🗄️ DB_HOST: ${process.env.DB_HOST || 'localhost'}`);
+  console.log(`🗄️ DB_NAME: ${process.env.DB_NAME || 'amigo_do_povo'}`);
+  console.log(`🗄️ DB_USER: ${process.env.DB_USER || 'postgres'}`);
 });
 
 // Graceful shutdown
