@@ -36,23 +36,21 @@ export const AuthProvider = ({ children }) => {
           
           console.log('✅ Dados carregados do localStorage');
           
-          // Comentar temporariamente a verificação de token para debug
-          console.log('⏸️ Verificação de token desabilitada temporariamente');
-          /*
           // Verificar se o token ainda é válido
+          console.log('🔍 Verificando validade do token...');
           const response = await authAPI.me();
           if (response.data.success) {
+            console.log('✅ Token válido, atualizando dados do usuário');
             setUser(response.data.data.usuario);
             localStorage.setItem('user', JSON.stringify(response.data.data.usuario));
           } else {
-            // Token inválido, limpar dados
+            console.log('❌ Token inválido, fazendo logout');
             logout();
           }
-          */
         } catch (error) {
           console.error('💥 Erro ao verificar autenticação:', error);
-          // Comentar logout temporariamente
-          // logout();
+          console.log('❌ Erro na verificação, fazendo logout');
+          logout();
         }
       } else {
         console.log('❌ Nenhum token ou usuário encontrado no localStorage');
