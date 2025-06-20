@@ -48,6 +48,21 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 // ROTAS PÚBLICAS
 // =====================================================
 
+// Rota raiz
+app.get('/', (req, res) => {
+  res.json({
+    success: true,
+    message: 'Sistema Amigo do Povo - Backend funcionando!',
+    timestamp: new Date().toISOString(),
+    version: '1.0.0',
+    endpoints: {
+      health: '/api/health',
+      auth: '/api/auth',
+      alunos: '/api/alunos'
+    }
+  });
+});
+
 // Health check
 app.get('/api/health', (req, res) => {
   res.json({
