@@ -16,6 +16,7 @@ if (process.env.DB_PASSWORD && process.env.DB_PASSWORD.trim() !== '') {
   poolConfig.password = process.env.DB_PASSWORD;
 }
 
+// For development, if no password is set, try without password
 const pool = new Pool(poolConfig);
 
 // Teste de conexão
@@ -24,10 +25,30 @@ pool.on('connect', () => {
 });
 
 pool.on('error', (err) => {
-  console.error('❌ Erro na conexão com o banco:', err);
+  console.error('❌ Erro na conexão com o banco:', err.message);
+  
+  if (err.code === '28P01') {
+    console.log('💡 Dica: Configure uma senha para o usuário postgres ou deixe DB_PASSWORD vazio');
+  }
+  
+  if (err.code === 'ECONNREFUSED') {
+    console.log('💡 Dica: Verifique se o PostgreSQL está rodando');
+  }
 });
+
+// Função para testar conexão
+const testConnection = async () => {
+  try {
+    await pool.query('SELECT NOW()');
+    return true;
+  } catch (error) {
+    console.error('❌ Falha na conexão com o banco:', error.message);
+    return false;
+  }
+};
 
 module.exports = {
   query: (text, params) => pool.query(text, params),
-  pool
+  pool,
+  testConnection
 }; 

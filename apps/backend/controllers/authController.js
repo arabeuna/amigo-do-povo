@@ -5,15 +5,61 @@ const db = require('../config/database');
 
 const login = async (req, res) => {
   try {
+    console.log('🔍 Iniciando login...');
+    console.log('📧 Email recebido:', req.body.email);
+    
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
-      return res.status(400).json({ 
-        success: false, 
-        errors: errors.array() 
+      console.log('❌ Erros de validação:', errors.array());
+      return res.status(400).json({
+        success: false,
+        errors: errors.array()
       });
     }
 
     const { email, senha } = req.body;
+
+    // Verificar se o banco está disponível
+    console.log('🔍 Testando conexão com banco...');
+    const dbAvailable = await db.testConnection();
+    console.log('📊 Banco disponível:', dbAvailable);
+
+    if (!dbAvailable) {
+      console.log('⚠️ Banco não disponível, usando modo desenvolvimento');
+      // Fallback para desenvolvimento - usuário padrão
+      if (email === 'admin@amigodopovo.com' && senha === 'admin123') {
+        console.log('✅ Credenciais de desenvolvimento válidas');
+        console.log('🔑 JWT_SECRET:', process.env.JWT_SECRET ? 'Definido' : 'NÃO DEFINIDO');
+        
+        const token = jwt.sign(
+          { userId: 1, email: email, perfil: 'admin' },
+          process.env.JWT_SECRET || 'fallback-secret',
+          { expiresIn: process.env.JWT_EXPIRES_IN || '24h' }
+        );
+
+        console.log('🎫 Token gerado com sucesso');
+        res.json({
+          success: true,
+          message: 'Login realizado com sucesso (modo desenvolvimento)',
+          data: {
+            usuario: {
+              id: 1,
+              nome: 'Administrador',
+              email: email,
+              perfil: 'admin'
+            },
+            token
+          }
+        });
+        return;
+      } else {
+        console.log('❌ Credenciais de desenvolvimento inválidas');
+        return res.status(401).json({
+          success: false,
+          message: 'Email ou senha inválidos (modo desenvolvimento)'
+        });
+      }
+    }
 
     // Buscar usuário pelo email
     const result = await db.query(
