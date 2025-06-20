@@ -39,7 +39,15 @@ api.interceptors.response.use(
     return response;
   },
   (error) => {
+    console.log('🚨 Erro na requisição:', {
+      status: error.response?.status,
+      url: error.config?.url,
+      method: error.config?.method,
+      message: error.response?.data?.message
+    });
+    
     if (error.response?.status === 401) {
+      console.log('🔒 Erro 401 detectado - fazendo logout automático');
       // Token expirado ou inválido
       localStorage.removeItem('token');
       localStorage.removeItem('user');
