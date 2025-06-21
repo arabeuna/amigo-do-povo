@@ -192,6 +192,17 @@ app.get('/api/test-auth', (req, res) => {
   });
 });
 
+// Endpoint de teste sem autenticação
+app.get('/api/test-public', (req, res) => {
+  console.log('🌐 Endpoint público chamado');
+  res.json({
+    success: true,
+    message: 'Endpoint público funcionando!',
+    timestamp: new Date().toISOString(),
+    jwt_secret_length: process.env.JWT_SECRET ? process.env.JWT_SECRET.length : 0
+  });
+});
+
 // Alunos
 app.get('/api/alunos', authorize('admin', 'instrutor', 'financeiro'), alunosController.listarAlunos);
 app.get('/api/alunos/:id', authorize('admin', 'instrutor', 'financeiro'), alunosController.buscarAlunoPorId);
