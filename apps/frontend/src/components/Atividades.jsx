@@ -67,7 +67,8 @@ const Atividades = () => {
       console.log('✅ Atividades carregadas:', response.data);
       
       // Garantir que atividades seja sempre um array
-      let atividadesData = response.data.data || response.data || [];
+      // A API retorna: { success: true, data: { atividades: [...], paginacao: {...} } }
+      let atividadesData = response.data.data?.atividades || response.data.data || response.data || [];
       if (!Array.isArray(atividadesData)) {
         console.warn('⚠️ Dados de atividades não são um array:', atividadesData);
         atividadesData = [];
