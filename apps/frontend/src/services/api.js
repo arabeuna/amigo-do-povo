@@ -47,13 +47,20 @@ api.interceptors.response.use(
     });
     
     if (error.response?.status === 401) {
-      console.log('🔒 Erro 401 detectado - fazendo logout automático');
+      console.log('🔒 Erro 401 detectado - verificando se é problema de rede');
       console.log('📋 Detalhes do erro:', error.response?.data);
       
-      // Fazer logout automático em caso de erro 401
-      localStorage.removeItem('token');
-      localStorage.removeItem('user');
-      window.location.href = '/login';
+      // Só fazer logout se for claramente um problema de autenticação
+      // e não um problema de rede ou servidor
+      if (error.response?.data?.message?.includes('Token') || 
+          error.response?.data?.message?.includes('Unauthorized')) {
+        console.log('🔒 Problema de autenticação confirmado, fazendo logout');
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+        window.location.href = '/login';
+      } else {
+        console.log('⚠️ Erro 401 pode ser temporário, não fazendo logout automático');
+      }
     }
     return Promise.reject(error);
   }

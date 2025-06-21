@@ -36,9 +36,17 @@ export const AuthProvider = ({ children }) => {
           
           console.log('✅ Dados carregados do localStorage');
           
-          // Verificar se o token ainda é válido
+          // Verificar se o token ainda é válido (com timeout)
           console.log('🔍 Verificando validade do token...');
-          const response = await authAPI.me();
+          const timeoutPromise = new Promise((_, reject) => 
+            setTimeout(() => reject(new Error('Timeout')), 5000)
+          );
+          
+          const response = await Promise.race([
+            authAPI.me(),
+            timeoutPromise
+          ]);
+          
           if (response.data.success) {
             console.log('✅ Token válido, atualizando dados do usuário');
             setUser(response.data.data.usuario);
@@ -49,8 +57,18 @@ export const AuthProvider = ({ children }) => {
           }
         } catch (error) {
           console.error('💥 Erro ao verificar autenticação:', error);
-          console.log('❌ Erro na verificação, fazendo logout');
-          logout();
+          
+          // Não fazer logout automático em caso de problemas de rede
+          if (error.message === 'Timeout' || error.code === 'NETWORK_ERROR') {
+            console.log('⚠️ Problema de rede detectado, mantendo login local');
+            // Manter o usuário logado localmente
+          } else if (error.response?.status === 401) {
+            console.log('❌ Token expirado, fazendo logout');
+            logout();
+          } else {
+            console.log('⚠️ Erro desconhecido, mantendo login local por segurança');
+            // Manter o usuário logado localmente em caso de erro desconhecido
+          }
         }
       } else {
         console.log('❌ Nenhum token ou usuário encontrado no localStorage');
