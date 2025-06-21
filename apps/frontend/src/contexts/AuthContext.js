@@ -33,36 +33,12 @@ export const AuthProvider = ({ children }) => {
         try {
           setToken(storedToken);
           setUser(JSON.parse(storedUser));
-          
           console.log('✅ Dados carregados do localStorage');
-          console.log('⏸️ Verificação de token desabilitada temporariamente para resolver loop de login/logout');
-          
-          // DESABILITADO TEMPORARIAMENTE - Verificação automática de token
-          /*
-          // Verificar se o token ainda é válido (com timeout)
-          console.log('🔍 Verificando validade do token...');
-          const timeoutPromise = new Promise((_, reject) => 
-            setTimeout(() => reject(new Error('Timeout')), 5000)
-          );
-          
-          const response = await Promise.race([
-            authAPI.me(),
-            timeoutPromise
-          ]);
-          
-          if (response.data.success) {
-            console.log('✅ Token válido, atualizando dados do usuário');
-            setUser(response.data.data.usuario);
-            localStorage.setItem('user', JSON.stringify(response.data.data.usuario));
-          } else {
-            console.log('❌ Token inválido, fazendo logout');
-            logout();
-          }
-          */
         } catch (error) {
-          console.error('💥 Erro ao verificar autenticação:', error);
-          console.log('⚠️ Erro na verificação, mas mantendo login local por segurança');
-          // Não fazer logout automático
+          console.error('💥 Erro ao carregar dados do localStorage:', error);
+          // Limpar dados corrompidos
+          localStorage.removeItem('token');
+          localStorage.removeItem('user');
         }
       } else {
         console.log('❌ Nenhum token ou usuário encontrado no localStorage');

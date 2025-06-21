@@ -58,13 +58,13 @@ const Dashboard = () => {
           </div>
           <div className="ml-4 flex-1">
             <p className="text-sm font-medium text-gray-500 truncate">{title}</p>
-            <p className="text-2xl font-semibold text-gray-900">
+            <div className="text-2xl font-semibold text-gray-900">
               {loading ? (
                 <div className="spinner h-8 w-8"></div>
               ) : (
                 value.toLocaleString('pt-BR')
               )}
-            </p>
+            </div>
             {change && (
               <p className={`text-sm ${change > 0 ? 'text-green-600' : 'text-red-600'}`}>
                 {change > 0 ? '+' : ''}{change}% em relação ao mês anterior

@@ -19,7 +19,8 @@
     "install:frontend": "cd apps/frontend && npm install",
     "clean": "npm run clean:backend && npm run clean:frontend",
     "clean:backend": "cd apps/backend && npm run clean",
-    "clean:frontend": "cd apps/frontend && npm run clean"
+    "clean:frontend": "cd apps/frontend && npm run clean",
+    "deploy:render": "npm run build && npm start"
   },
   "dependencies": {
     "fs-extra": "^11.2.0"

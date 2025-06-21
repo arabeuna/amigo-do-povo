@@ -352,6 +352,369 @@ const listarTiposAtividades = async (req, res) => {
   }
 };
 
+// Exportar atividades
+const exportarAtividades = async (req, res) => {
+  try {
+    const { formato = 'excel', ...filtros } = req.query;
+    
+    // Construir query com filtros
+    let whereConditions = ['a.ativo = $1'];
+    let params = [true];
+    let paramIndex = 2;
+
+    if (filtros.busca) {
+      whereConditions.push(`(a.nome ILIKE $${paramIndex} OR a.descricao ILIKE $${paramIndex})`);
+      params.push(`%${filtros.busca}%`);
+      paramIndex++;
+    }
+
+    if (filtros.tipo) {
+      whereConditions.push(`a.tipo = $${paramIndex}`);
+      params.push(filtros.tipo);
+      paramIndex++;
+    }
+
+    const whereClause = whereConditions.join(' AND ');
+
+    const query = `
+      SELECT 
+        a.id,
+        a.nome,
+        a.descricao,
+        a.tipo,
+        a.dias_semana,
+        a.horario_inicio,
+        a.horario_fim,
+        u.nome as instrutor_nome,
+        u.email as instrutor_email,
+        a.vagas_maximas,
+        a.vagas_disponiveis,
+        a.valor_mensalidade,
+        a.ativo,
+        a.data_criacao,
+        (SELECT COUNT(*) FROM matriculas m WHERE m.atividade_id = a.id AND m.status = 'ativa' AND m.ativo = true) as alunos_matriculados
+      FROM atividades a 
+      LEFT JOIN usuarios u ON a.instrutor_id = u.id 
+      WHERE ${whereClause}
+      ORDER BY a.nome
+    `;
+
+    const result = await db.query(query, params);
+    
+    // Preparar dados para exportação
+    const dados = result.rows.map(row => ({
+      'ID': row.id,
+      'Nome': row.nome,
+      'Descrição': row.descricao || '',
+      'Tipo': row.tipo,
+      'Dias da Semana': row.dias_semana || '',
+      'Horário Início': row.horario_inicio || '',
+      'Horário Fim': row.horario_fim || '',
+      'Instrutor': row.instrutor_nome || '',
+      'Email Instrutor': row.instrutor_email || '',
+      'Vagas Máximas': row.vagas_maximas,
+      'Vagas Disponíveis': row.vagas_disponiveis,
+      'Valor Mensalidade': row.valor_mensalidade,
+      'Alunos Matriculados': row.alunos_matriculados,
+      'Ativo': row.ativo ? 'Sim' : 'Não',
+      'Data Criação': new Date(row.data_criacao).toLocaleDateString('pt-BR')
+    }));
+
+    if (formato === 'csv') {
+      const csv = require('csv-stringify/sync');
+      const csvData = csv.stringify(dados, { header: true });
+      
+      res.setHeader('Content-Type', 'text/csv');
+      res.setHeader('Content-Disposition', `attachment; filename=atividades_${new Date().toISOString().split('T')[0]}.csv`);
+      res.send(csvData);
+    } else {
+      const ExcelJS = require('exceljs');
+      const workbook = new ExcelJS.Workbook();
+      const worksheet = workbook.addWorksheet('Atividades');
+
+      // Adicionar cabeçalhos
+      const headers = Object.keys(dados[0] || {});
+      worksheet.addRow(headers);
+
+      // Adicionar dados
+      dados.forEach(row => {
+        worksheet.addRow(Object.values(row));
+      });
+
+      // Estilizar cabeçalhos
+      worksheet.getRow(1).font = { bold: true };
+      worksheet.getRow(1).fill = {
+        type: 'pattern',
+        pattern: 'solid',
+        fgColor: { argb: 'FFE0E0E0' }
+      };
+
+      // Ajustar largura das colunas
+      headers.forEach((header, index) => {
+        worksheet.getColumn(index + 1).width = Math.max(header.length + 2, 15);
+      });
+
+      res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+      res.setHeader('Content-Disposition', `attachment; filename=atividades_${new Date().toISOString().split('T')[0]}.xlsx`);
+      
+      await workbook.xlsx.write(res);
+    }
+
+  } catch (error) {
+    console.error('Erro ao exportar atividades:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Erro ao exportar atividades'
+    });
+  }
+};
+
+// Download template para importação de atividades
+const downloadTemplateAtividades = async (req, res) => {
+  try {
+    const ExcelJS = require('exceljs');
+    const workbook = new ExcelJS.Workbook();
+    const worksheet = workbook.addWorksheet('Template Atividades');
+
+    // Cabeçalhos do template
+    const headers = [
+      'Nome',
+      'Descrição',
+      'Tipo (dança/natação/bombeiro_mirim/informática/hidroginástica/funcional/fisioterapia/karatê)',
+      'Dias da Semana (ex: Segunda,Quarta,Sexta)',
+      'Horário Início (HH:MM)',
+      'Horário Fim (HH:MM)',
+      'Instrutor (Email)',
+      'Vagas Máximas',
+      'Valor Mensalidade'
+    ];
+
+    worksheet.addRow(headers);
+
+    // Estilizar cabeçalhos
+    worksheet.getRow(1).font = { bold: true };
+    worksheet.getRow(1).fill = {
+      type: 'pattern',
+      pattern: 'solid',
+      fgColor: { argb: 'FFE0E0E0' }
+    };
+
+    // Adicionar exemplo
+    worksheet.addRow([
+      'Dança Contemporânea',
+      'Aulas de dança contemporânea para jovens',
+      'dança',
+      'Segunda,Quarta,Sexta',
+      '14:00',
+      '15:30',
+      'instrutor@amigodopovo.com',
+      '25',
+      '60.00'
+    ]);
+
+    // Ajustar largura das colunas
+    headers.forEach((header, index) => {
+      worksheet.getColumn(index + 1).width = Math.max(header.length + 2, 25);
+    });
+
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    res.setHeader('Content-Disposition', 'attachment; filename=template_atividades.xlsx');
+    
+    await workbook.xlsx.write(res);
+
+  } catch (error) {
+    console.error('Erro ao gerar template:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Erro ao gerar template'
+    });
+  }
+};
+
+// Importar atividades
+const importarAtividades = async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({
+        success: false,
+        message: 'Arquivo não fornecido'
+      });
+    }
+
+    const { substituir = false } = req.body;
+    const ExcelJS = require('exceljs');
+    const workbook = new ExcelJS.Workbook();
+    
+    await workbook.xlsx.load(req.file.buffer);
+    const worksheet = workbook.getWorksheet(1);
+
+    const atividades = [];
+    const erros = [];
+
+    // Processar linhas (pular cabeçalho)
+    for (let i = 2; i <= worksheet.rowCount; i++) {
+      const row = worksheet.getRow(i);
+      const rowData = row.values;
+
+      if (!rowData[1]) continue; // Linha vazia
+
+      try {
+        const nome = rowData[1]?.toString().trim();
+        const descricao = rowData[2]?.toString().trim();
+        const tipo = rowData[3]?.toString().toLowerCase().trim();
+        const diasSemana = rowData[4]?.toString().trim();
+        const horarioInicio = rowData[5]?.toString().trim();
+        const horarioFim = rowData[6]?.toString().trim();
+        const instrutorEmail = rowData[7]?.toString().trim();
+        const vagasMaximas = parseInt(rowData[8]) || 30;
+        const valorMensalidade = parseFloat(rowData[9]) || 0;
+
+        // Validações básicas
+        if (!nome || !tipo) {
+          erros.push(`Linha ${i}: Nome e tipo são obrigatórios`);
+          continue;
+        }
+
+        // Validar tipo de atividade
+        const tiposValidos = ['dança', 'natação', 'bombeiro_mirim', 'informática', 'hidroginástica', 'funcional', 'fisioterapia', 'karatê'];
+        if (!tiposValidos.includes(tipo)) {
+          erros.push(`Linha ${i}: Tipo inválido: ${tipo}`);
+          continue;
+        }
+
+        // Buscar instrutor se fornecido
+        let instrutorId = null;
+        if (instrutorEmail) {
+          const instrutorResult = await db.query(
+            'SELECT id FROM usuarios WHERE email = $1 AND ativo = true',
+            [instrutorEmail]
+          );
+
+          if (instrutorResult.rows.length === 0) {
+            erros.push(`Linha ${i}: Instrutor não encontrado: ${instrutorEmail}`);
+            continue;
+          }
+          instrutorId = instrutorResult.rows[0].id;
+        }
+
+        // Verificar se já existe atividade com mesmo nome
+        const atividadeExistente = await db.query(
+          'SELECT id FROM atividades WHERE nome ILIKE $1 AND ativo = true',
+          [nome]
+        );
+
+        if (atividadeExistente.rows.length > 0 && !substituir) {
+          erros.push(`Linha ${i}: Atividade já existe: ${nome}`);
+          continue;
+        }
+
+        // Processar horários
+        let horarioInicioProcessado = null;
+        let horarioFimProcessado = null;
+
+        if (horarioInicio) {
+          const [hora, minuto] = horarioInicio.split(':');
+          horarioInicioProcessado = `${hora.padStart(2, '0')}:${minuto.padStart(2, '0')}:00`;
+        }
+
+        if (horarioFim) {
+          const [hora, minuto] = horarioFim.split(':');
+          horarioFimProcessado = `${hora.padStart(2, '0')}:${minuto.padStart(2, '0')}:00`;
+        }
+
+        atividades.push({
+          nome,
+          descricao,
+          tipo,
+          dias_semana: diasSemana,
+          horario_inicio: horarioInicioProcessado,
+          horario_fim: horarioFimProcessado,
+          instrutor_id: instrutorId,
+          vagas_maximas: vagasMaximas,
+          valor_mensalidade: valorMensalidade,
+          substituir: atividadeExistente.rows.length > 0
+        });
+
+      } catch (error) {
+        erros.push(`Linha ${i}: Erro ao processar linha - ${error.message}`);
+      }
+    }
+
+    // Inserir/atualizar atividades
+    let inseridas = 0;
+    let atualizadas = 0;
+
+    for (const atividade of atividades) {
+      try {
+        if (atividade.substituir) {
+          // Atualizar atividade existente
+          await db.query(`
+            UPDATE atividades SET
+              descricao = $1,
+              tipo = $2,
+              dias_semana = $3,
+              horario_inicio = $4,
+              horario_fim = $5,
+              instrutor_id = $6,
+              vagas_maximas = $7,
+              valor_mensalidade = $8
+            WHERE nome ILIKE $9 AND ativo = true
+          `, [
+            atividade.descricao,
+            atividade.tipo,
+            atividade.dias_semana,
+            atividade.horario_inicio,
+            atividade.horario_fim,
+            atividade.instrutor_id,
+            atividade.vagas_maximas,
+            atividade.valor_mensalidade,
+            atividade.nome
+          ]);
+          atualizadas++;
+        } else {
+          // Inserir nova atividade
+          await db.query(`
+            INSERT INTO atividades (
+              nome, descricao, tipo, dias_semana, horario_inicio, horario_fim,
+              instrutor_id, vagas_maximas, vagas_disponiveis, valor_mensalidade
+            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $8, $9)
+          `, [
+            atividade.nome,
+            atividade.descricao,
+            atividade.tipo,
+            atividade.dias_semana,
+            atividade.horario_inicio,
+            atividade.horario_fim,
+            atividade.instrutor_id,
+            atividade.vagas_maximas,
+            atividade.valor_mensalidade
+          ]);
+          inseridas++;
+        }
+      } catch (error) {
+        erros.push(`Erro ao salvar atividade: ${error.message}`);
+      }
+    }
+
+    res.json({
+      success: true,
+      message: `Importação concluída: ${inseridas} inseridas, ${atualizadas} atualizadas`,
+      data: {
+        inseridas,
+        atualizadas,
+        erros: erros.length > 0 ? erros : undefined
+      }
+    });
+
+  } catch (error) {
+    console.error('Erro ao importar atividades:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Erro ao importar atividades'
+    });
+  }
+};
+
 module.exports = {
   listarAtividades,
   buscarAtividadePorId,
@@ -359,5 +722,8 @@ module.exports = {
   atualizarAtividade,
   deletarAtividade,
   buscarAlunosMatriculados,
-  listarTiposAtividades
+  listarTiposAtividades,
+  exportarAtividades,
+  downloadTemplateAtividades,
+  importarAtividades
 }; 

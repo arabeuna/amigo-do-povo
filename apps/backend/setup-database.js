@@ -124,6 +124,46 @@ async function setupDatabase() {
       
       console.log('✅ Tabela matriculas criada');
       
+      // Criar tabela de frequências
+      await pool.query(`
+        CREATE TABLE IF NOT EXISTS frequencias (
+          id SERIAL PRIMARY KEY,
+          aluno_id INTEGER REFERENCES alunos(id) ON DELETE CASCADE,
+          atividade_id INTEGER REFERENCES atividades(id) ON DELETE CASCADE,
+          data_frequencia DATE NOT NULL,
+          presente BOOLEAN DEFAULT false,
+          justificativa TEXT,
+          observacoes TEXT,
+          registrado_por INTEGER REFERENCES usuarios(id),
+          data_registro TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+          UNIQUE(aluno_id, atividade_id, data_frequencia)
+        );
+      `);
+      
+      console.log('✅ Tabela frequencias criada');
+      
+      // Criar tabela de mensalidades
+      await pool.query(`
+        CREATE TABLE IF NOT EXISTS mensalidades (
+          id SERIAL PRIMARY KEY,
+          aluno_id INTEGER REFERENCES alunos(id) ON DELETE CASCADE,
+          atividade_id INTEGER REFERENCES atividades(id) ON DELETE CASCADE,
+          mes INTEGER NOT NULL CHECK (mes >= 1 AND mes <= 12),
+          ano INTEGER NOT NULL,
+          valor DECIMAL(10,2) NOT NULL,
+          status VARCHAR(20) DEFAULT 'pendente' CHECK (status IN ('pendente', 'pago', 'atrasado', 'cancelado')),
+          data_vencimento DATE,
+          data_pagamento DATE,
+          forma_pagamento VARCHAR(50),
+          observacoes TEXT,
+          ativo BOOLEAN DEFAULT true,
+          data_criacao TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+          UNIQUE(aluno_id, atividade_id, mes, ano)
+        );
+      `);
+      
+      console.log('✅ Tabela mensalidades criada');
+      
     } else {
       console.log('✅ Tabelas já existem');
     }

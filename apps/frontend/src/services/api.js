@@ -91,6 +91,16 @@ export const alunosAPI = {
   atualizar: (id, alunoData) => api.put(`/alunos/${id}`, alunoData),
   deletar: (id) => api.delete(`/alunos/${id}`),
   buscarMatriculas: (id) => api.get(`/alunos/${id}/matriculas`),
+  exportar: (params = {}) => api.get('/alunos/exportar', { 
+    params,
+    responseType: 'blob'
+  }),
+  importar: (formData) => api.post('/alunos/importar', formData, {
+    headers: { 'Content-Type': 'multipart/form-data' }
+  }),
+  downloadTemplate: () => api.get('/alunos/template', {
+    responseType: 'blob'
+  }),
 };
 
 // =====================================================
@@ -115,6 +125,16 @@ export const atividadesAPI = {
   criar: (atividadeData) => api.post('/atividades', atividadeData),
   atualizar: (id, atividadeData) => api.put(`/atividades/${id}`, atividadeData),
   deletar: (id) => api.delete(`/atividades/${id}`),
+  exportar: (params = {}) => api.get('/atividades/exportar', { 
+    params,
+    responseType: 'blob'
+  }),
+  importar: (formData) => api.post('/atividades/importar', formData, {
+    headers: { 'Content-Type': 'multipart/form-data' }
+  }),
+  downloadTemplate: () => api.get('/atividades/template', {
+    responseType: 'blob'
+  }),
 };
 
 // =====================================================
@@ -136,11 +156,23 @@ export const matriculasAPI = {
 export const frequenciasAPI = {
   listar: (params = {}) => api.get('/frequencias', { params }),
   buscarPorId: (id) => api.get(`/frequencias/${id}`),
-  criar: (frequenciaData) => api.post('/frequencias', frequenciaData),
+  registrar: (frequenciaData) => api.post('/frequencias', frequenciaData),
+  registrarEmLote: (loteData) => api.post('/frequencias/lote', loteData),
   atualizar: (id, frequenciaData) => api.put(`/frequencias/${id}`, frequenciaData),
   deletar: (id) => api.delete(`/frequencias/${id}`),
-  registrarPresenca: (data) => api.post('/frequencias/registrar', data),
-  registrarPresencaEmLote: (data) => api.post('/frequencias/registrar-lote', data),
+  buscarPorAtividade: (atividadeId) => api.get(`/frequencias/atividade/${atividadeId}`),
+  buscarRelatorio: (params = {}) => api.get('/frequencias/relatorio', { params }),
+  listarAlunosMatriculados: (atividadeId) => api.get(`/atividades/${atividadeId}/alunos-matriculados`),
+  exportar: (params = {}) => api.get('/frequencias/exportar', { 
+    params,
+    responseType: 'blob'
+  }),
+  importar: (formData) => api.post('/frequencias/importar', formData, {
+    headers: { 'Content-Type': 'multipart/form-data' }
+  }),
+  downloadTemplate: () => api.get('/frequencias/template', {
+    responseType: 'blob'
+  }),
 };
 
 // =====================================================
@@ -155,6 +187,16 @@ export const mensalidadesAPI = {
   deletar: (id) => api.delete(`/mensalidades/${id}`),
   registrarPagamento: (id, pagamentoData) => api.post(`/mensalidades/${id}/pagar`, pagamentoData),
   gerarMensalidades: (data) => api.post('/mensalidades/gerar', data),
+  exportar: (params = {}) => api.get('/mensalidades/exportar', { 
+    params,
+    responseType: 'blob'
+  }),
+  importar: (formData) => api.post('/mensalidades/importar', formData, {
+    headers: { 'Content-Type': 'multipart/form-data' }
+  }),
+  downloadTemplate: () => api.get('/mensalidades/template', {
+    responseType: 'blob'
+  }),
 };
 
 // =====================================================

@@ -5,7 +5,12 @@ import { AuthProvider, useAuth } from './contexts/AuthContext';
 import Login from './components/Login';
 import Dashboard from './components/Dashboard';
 import Layout from './components/Layout';
+import Alunos from './components/Alunos';
 import Atividades from './components/Atividades';
+import Frequencias from './components/Frequencias';
+import Mensalidades from './components/Mensalidades';
+import Relatorios from './components/Relatorios';
+import Configuracoes from './components/Configuracoes';
 import './index.css';
 
 // Componente para rotas protegidas
@@ -59,11 +64,66 @@ const AppContent = () => {
         />
 
         <Route
+          path="/alunos"
+          element={
+            <ProtectedRoute>
+              <Layout>
+                <Alunos />
+              </Layout>
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
           path="/atividades"
           element={
             <ProtectedRoute>
               <Layout>
                 <Atividades />
+              </Layout>
+            </ProtectedRoute>
+          }
+        />
+        
+        <Route
+          path="/frequencias"
+          element={
+            <ProtectedRoute>
+              <Layout>
+                <Frequencias />
+              </Layout>
+            </ProtectedRoute>
+          }
+        />
+        
+        <Route
+          path="/mensalidades"
+          element={
+            <ProtectedRoute>
+              <Layout>
+                <Mensalidades />
+              </Layout>
+            </ProtectedRoute>
+          }
+        />
+        
+        <Route
+          path="/relatorios"
+          element={
+            <ProtectedRoute>
+              <Layout>
+                <Relatorios />
+              </Layout>
+            </ProtectedRoute>
+          }
+        />
+        
+        <Route
+          path="/configuracoes"
+          element={
+            <ProtectedRoute>
+              <Layout>
+                <Configuracoes />
               </Layout>
             </ProtectedRoute>
           }

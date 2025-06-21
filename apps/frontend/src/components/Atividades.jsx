@@ -10,7 +10,11 @@ import {
   Users,
   DollarSign,
   Eye,
-  MoreHorizontal
+  MoreHorizontal,
+  Download,
+  Upload,
+  FileSpreadsheet,
+  AlertTriangle
 } from 'lucide-react';
 import { atividadesAPI } from '../services/api';
 import toast from 'react-hot-toast';
@@ -22,6 +26,10 @@ const Atividades = () => {
   const [editingAtividade, setEditingAtividade] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterTipo, setFilterTipo] = useState('');
+  const [showImportModal, setShowImportModal] = useState(false);
+  const [importFile, setImportFile] = useState(null);
+  const [importing, setImporting] = useState(false);
+  const [substituir, setSubstituir] = useState(false);
 
   const [formData, setFormData] = useState({
     nome: '',
@@ -179,6 +187,107 @@ const Atividades = () => {
     resetForm();
   };
 
+  const handleExportar = async (formato = 'excel') => {
+    try {
+      const params = { 
+        formato,
+        busca: searchTerm,
+        tipo: filterTipo
+      };
+      
+      const response = await atividadesAPI.exportar(params);
+      
+      // Criar link para download
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `atividades_${new Date().toISOString().split('T')[0]}.${formato === 'csv' ? 'csv' : 'xlsx'}`);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+      
+      toast.success(`Lista de atividades exportada com sucesso!`);
+    } catch (error) {
+      console.error('Erro ao exportar atividades:', error);
+      toast.error('Erro ao exportar atividades');
+    }
+  };
+
+  const handleDownloadTemplate = async () => {
+    try {
+      const response = await atividadesAPI.downloadTemplate();
+      
+      // Criar link para download
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', 'template_atividades.xlsx');
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+      
+      toast.success('Template baixado com sucesso!');
+    } catch (error) {
+      console.error('Erro ao baixar template:', error);
+      toast.error('Erro ao baixar template');
+    }
+  };
+
+  const handleImportar = async (e) => {
+    e.preventDefault();
+    
+    if (!importFile) {
+      toast.error('Selecione um arquivo para importar');
+      return;
+    }
+
+    try {
+      setImporting(true);
+      
+      const formData = new FormData();
+      formData.append('arquivo', importFile);
+      formData.append('substituir', substituir);
+      
+      const response = await atividadesAPI.importar(formData);
+      
+      toast.success(response.data.message);
+      setShowImportModal(false);
+      setImportFile(null);
+      setSubstituir(false);
+      
+      // Recarregar dados
+      loadAtividades();
+      
+    } catch (error) {
+      console.error('Erro ao importar atividades:', error);
+      toast.error(error.response?.data?.message || 'Erro ao importar atividades');
+    } finally {
+      setImporting(false);
+    }
+  };
+
+  const handleFileChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      const allowedTypes = ['csv', 'xlsx', 'xls'];
+      const fileExtension = file.name.split('.').pop().toLowerCase();
+      
+      if (!allowedTypes.includes(fileExtension)) {
+        toast.error('Formato de arquivo não suportado. Use CSV ou Excel (.xlsx, .xls)');
+        return;
+      }
+      
+      if (file.size > 5 * 1024 * 1024) { // 5MB
+        toast.error('Arquivo muito grande. Tamanho máximo: 5MB');
+        return;
+      }
+      
+      setImportFile(file);
+    }
+  };
+
   const filteredAtividades = Array.isArray(atividades) ? atividades.filter(atividade => {
     const matchesSearch = atividade.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          atividade.descricao?.toLowerCase().includes(searchTerm.toLowerCase());
@@ -217,13 +326,47 @@ const Atividades = () => {
           </p>
         </div>
         <div className="mt-4 sm:mt-0">
-          <button
-            onClick={openModal}
-            className="btn-primary"
-          >
-            <Plus className="h-4 w-4 mr-2" />
-            Nova Atividade
-          </button>
+          <div className="flex gap-2">
+            <button
+              onClick={openModal}
+              className="btn-primary"
+            >
+              <Plus className="h-4 w-4 mr-2" />
+              Nova Atividade
+            </button>
+            
+            <button
+              onClick={() => handleExportar('excel')}
+              className="bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 flex items-center"
+            >
+              <Download className="h-4 w-4 mr-2" />
+              Exportar Excel
+            </button>
+            
+            <button
+              onClick={() => handleExportar('csv')}
+              className="bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 flex items-center"
+            >
+              <FileSpreadsheet className="h-4 w-4 mr-2" />
+              Exportar CSV
+            </button>
+            
+            <button
+              onClick={handleDownloadTemplate}
+              className="bg-purple-600 text-white px-4 py-2 rounded-md hover:bg-purple-700 flex items-center"
+            >
+              <Download className="h-4 w-4 mr-2" />
+              Template
+            </button>
+            
+            <button
+              onClick={() => setShowImportModal(true)}
+              className="bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700 flex items-center"
+            >
+              <Upload className="h-4 w-4 mr-2" />
+              Importar
+            </button>
+          </div>
         </div>
       </div>
 
@@ -568,6 +711,89 @@ const Atividades = () => {
                     className="btn-primary"
                   >
                     {editingAtividade ? 'Atualizar' : 'Criar'}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal de Importação */}
+      {showImportModal && (
+        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+          <div className="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+            <div className="mt-3">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-medium text-gray-900">
+                  Importar Atividades
+                </h3>
+                <button
+                  onClick={() => setShowImportModal(false)}
+                  className="text-gray-400 hover:text-gray-600"
+                >
+                  <AlertTriangle className="h-6 w-6" />
+                </button>
+              </div>
+
+              <form onSubmit={handleImportar}>
+                <div className="mb-4">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Arquivo (CSV ou Excel)
+                  </label>
+                  <input
+                    type="file"
+                    accept=".csv,.xlsx,.xls"
+                    onChange={handleFileChange}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    required
+                  />
+                  <p className="text-xs text-gray-500 mt-1">
+                    Formatos aceitos: CSV, Excel (.xlsx, .xls)
+                  </p>
+                </div>
+
+                <div className="mb-4">
+                  <label className="flex items-center">
+                    <input
+                      type="checkbox"
+                      checked={substituir}
+                      onChange={(e) => setSubstituir(e.target.checked)}
+                      className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                    />
+                    <span className="ml-2 text-sm text-gray-700">
+                      Substituir atividades existentes
+                    </span>
+                  </label>
+                  <p className="text-xs text-gray-500 mt-1">
+                    Se marcado, atualiza atividades já registradas
+                  </p>
+                </div>
+
+                <div className="flex justify-end space-x-3">
+                  <button
+                    type="button"
+                    onClick={() => setShowImportModal(false)}
+                    className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200"
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={importing || !importFile}
+                    className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
+                  >
+                    {importing ? (
+                      <>
+                        <div className="spinner h-4 w-4 mr-2"></div>
+                        Importando...
+                      </>
+                    ) : (
+                      <>
+                        <Upload className="h-4 w-4 mr-2" />
+                        Importar
+                      </>
+                    )}
                   </button>
                 </div>
               </form>

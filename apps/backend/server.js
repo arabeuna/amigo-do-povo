@@ -4,12 +4,18 @@ const helmet = require('helmet');
 const compression = require('compression');
 const rateLimit = require('express-rate-limit');
 const path = require('path');
+const multer = require('multer');
 require('dotenv').config();
 
 const { auth, authorize } = require('./middleware/auth');
 const authController = require('./controllers/authController');
 const alunosController = require('./controllers/alunosController');
 const atividadesController = require('./controllers/atividadesController');
+const frequenciasController = require('./controllers/frequenciasController');
+const mensalidadesController = require('./controllers/mensalidadesController');
+const relatoriosController = require('./controllers/relatoriosController');
+const configuracoesController = require('./controllers/configuracoesController');
+const { validarCriarAluno, validarAtualizarAluno } = require('./validations/alunosValidation');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -87,8 +93,10 @@ app.use(compression());
 
 // CORS
 app.use(cors({
-  origin: process.env.CORS_ORIGIN || 'http://localhost:3000',
-  credentials: true
+  origin: ['http://localhost:3000', 'http://127.0.0.1:3000', 'http://192.168.1.5:3000'],
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'x-auth-token']
 }));
 
 // Body parsing
@@ -96,11 +104,19 @@ app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
 // =====================================================
-// SERVIÇO DE ARQUIVOS ESTÁTICOS (FRONTEND)
+// CONFIGURAÇÃO DE ARQUIVOS ESTÁTICOS PARA PRODUÇÃO
 // =====================================================
 
-// Servir arquivos estáticos do frontend build
-app.use(express.static(path.join(__dirname, 'frontend')));
+// Em produção, servir arquivos estáticos do frontend
+if (process.env.NODE_ENV === 'production') {
+  // Servir arquivos estáticos do build do React
+  app.use(express.static(path.join(__dirname, 'frontend')));
+  
+  // Servir arquivos CSS e JS do build
+  app.use('/static', express.static(path.join(__dirname, 'frontend/static')));
+  
+  console.log('📁 Configurado para servir arquivos estáticos do frontend');
+}
 
 // =====================================================
 // ROTAS PÚBLICAS
@@ -203,21 +219,115 @@ app.get('/api/test-public', (req, res) => {
   });
 });
 
+// Configuração do multer para upload de arquivos
+const storage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    cb(null, 'uploads/');
+  },
+  filename: function (req, file, cb) {
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+    cb(null, file.fieldname + '-' + uniqueSuffix + '.' + file.originalname.split('.').pop());
+  }
+});
+
+const upload = multer({ 
+  storage: storage,
+  fileFilter: function (req, file, cb) {
+    const allowedTypes = ['csv', 'xlsx', 'xls'];
+    const fileExtension = file.originalname.split('.').pop().toLowerCase();
+    
+    if (allowedTypes.includes(fileExtension)) {
+      cb(null, true);
+    } else {
+      cb(new Error('Formato de arquivo não suportado. Use CSV ou Excel (.xlsx, .xls)'), false);
+    }
+  },
+  limits: {
+    fileSize: 5 * 1024 * 1024 // 5MB
+  }
+});
+
+// Criar diretório de uploads se não existir
+const fs = require('fs');
+if (!fs.existsSync('uploads')) {
+  fs.mkdirSync('uploads');
+}
+
 // Alunos
 app.get('/api/alunos', authorize('admin', 'instrutor', 'financeiro'), alunosController.listarAlunos);
+
+// Importação e Exportação de Alunos (DEVE VIR ANTES das rotas com :id)
+app.get('/api/alunos/exportar', authorize('admin', 'instrutor', 'financeiro'), alunosController.exportarAlunos);
+app.post('/api/alunos/importar', authorize('admin'), upload.single('arquivo'), alunosController.importarAlunos);
+app.get('/api/alunos/template', authorize('admin', 'instrutor', 'financeiro'), alunosController.downloadTemplate);
+
+// Rotas de alunos com parâmetros (DEVEM VIR DEPOIS das rotas específicas)
 app.get('/api/alunos/:id', authorize('admin', 'instrutor', 'financeiro'), alunosController.buscarAlunoPorId);
-app.post('/api/alunos', authorize('admin'), alunosController.criarAluno);
-app.put('/api/alunos/:id', authorize('admin'), alunosController.atualizarAluno);
+app.post('/api/alunos', authorize('admin'), validarCriarAluno, alunosController.criarAluno);
+app.put('/api/alunos/:id', authorize('admin'), validarAtualizarAluno, alunosController.atualizarAluno);
 app.delete('/api/alunos/:id', authorize('admin'), alunosController.deletarAluno);
 app.get('/api/alunos/:id/matriculas', authorize('admin', 'instrutor', 'financeiro'), alunosController.buscarMatriculasAluno);
 
 // Atividades
 app.get('/api/atividades', authorize('admin', 'instrutor', 'financeiro'), atividadesController.listarAtividades);
+
+// Importação e Exportação de Atividades (DEVE VIR ANTES das rotas com :id)
+app.get('/api/atividades/exportar', authorize('admin', 'instrutor', 'financeiro'), atividadesController.exportarAtividades);
+app.post('/api/atividades/importar', authorize('admin'), upload.single('arquivo'), atividadesController.importarAtividades);
+app.get('/api/atividades/template', authorize('admin', 'instrutor', 'financeiro'), atividadesController.downloadTemplateAtividades);
+
 app.get('/api/atividades/:id', authorize('admin', 'instrutor', 'financeiro'), atividadesController.buscarAtividadePorId);
 app.post('/api/atividades', authorize('admin'), atividadesController.criarAtividade);
 app.put('/api/atividades/:id', authorize('admin'), atividadesController.atualizarAtividade);
 app.delete('/api/atividades/:id', authorize('admin'), atividadesController.deletarAtividade);
 app.get('/api/atividades/tipos', authorize('admin', 'instrutor', 'financeiro'), atividadesController.listarTiposAtividades);
+
+// Frequências
+app.get('/api/frequencias', authorize('admin', 'instrutor'), frequenciasController.listarFrequencias);
+
+// Importação e Exportação de Frequências (DEVE VIR ANTES das rotas com :id)
+app.get('/api/frequencias/exportar', authorize('admin', 'instrutor'), frequenciasController.exportarFrequencias);
+app.post('/api/frequencias/importar', authorize('admin', 'instrutor'), upload.single('arquivo'), frequenciasController.importarFrequencias);
+app.get('/api/frequencias/template', authorize('admin', 'instrutor'), frequenciasController.downloadTemplate);
+
+// Rotas de frequências com parâmetros (DEVEM VIR DEPOIS das rotas específicas)
+app.get('/api/frequencias/:id', authorize('admin', 'instrutor'), frequenciasController.buscarFrequenciaPorId);
+app.post('/api/frequencias', authorize('admin', 'instrutor'), frequenciasController.registrarFrequencia);
+app.post('/api/frequencias/lote', authorize('admin', 'instrutor'), frequenciasController.registrarFrequenciaEmLote);
+app.put('/api/frequencias/:id', authorize('admin', 'instrutor'), frequenciasController.atualizarFrequencia);
+app.delete('/api/frequencias/:id', authorize('admin'), frequenciasController.deletarFrequencia);
+app.get('/api/frequencias/atividade/:atividade_id', authorize('admin', 'instrutor'), frequenciasController.buscarFrequenciasPorAtividade);
+app.get('/api/frequencias/relatorio', authorize('admin', 'instrutor'), frequenciasController.buscarRelatorioFrequencia);
+app.get('/api/atividades/:atividade_id/alunos-matriculados', authorize('admin', 'instrutor'), frequenciasController.listarAlunosMatriculados);
+
+// Mensalidades
+app.get('/api/mensalidades', authorize('admin', 'financeiro'), mensalidadesController.listarMensalidades);
+
+// Importação e Exportação de Mensalidades (DEVE VIR ANTES das rotas com :id)
+app.get('/api/mensalidades/exportar', authorize('admin', 'financeiro'), mensalidadesController.exportarMensalidades);
+app.post('/api/mensalidades/importar', authorize('admin', 'financeiro'), upload.single('arquivo'), mensalidadesController.importarMensalidades);
+app.get('/api/mensalidades/template', authorize('admin', 'financeiro'), mensalidadesController.downloadTemplate);
+
+app.get('/api/mensalidades/:id', authorize('admin', 'financeiro'), mensalidadesController.buscarMensalidadePorId);
+app.post('/api/mensalidades/gerar', authorize('admin'), mensalidadesController.gerarMensalidades);
+app.put('/api/mensalidades/:id/pagamento', authorize('admin', 'financeiro'), mensalidadesController.registrarPagamento);
+app.put('/api/mensalidades/atualizar-vencidas', authorize('admin'), mensalidadesController.atualizarStatusVencidas);
+app.get('/api/mensalidades/relatorio', authorize('admin', 'financeiro'), mensalidadesController.relatorioFinanceiro);
+
+// Relatórios
+app.get('/api/relatorios/dashboard', authorize('admin', 'financeiro'), relatoriosController.getDashboard);
+app.get('/api/relatorios/detalhado', authorize('admin', 'financeiro'), relatoriosController.getRelatorioDetalhado);
+app.get('/api/relatorios/exportar', authorize('admin', 'financeiro'), relatoriosController.exportarRelatorio);
+
+// Configurações
+app.get('/api/configuracoes', authorize('admin'), configuracoesController.getConfiguracoes);
+app.put('/api/usuarios/perfil', authorize('admin', 'instrutor', 'financeiro'), configuracoesController.atualizarPerfil);
+app.put('/api/configuracoes/sistema', authorize('admin'), configuracoesController.salvarConfiguracoesSistema);
+app.put('/api/configuracoes/seguranca', authorize('admin'), configuracoesController.salvarConfiguracoesSeguranca);
+app.put('/api/configuracoes/backup', authorize('admin'), configuracoesController.salvarConfiguracoesBackup);
+app.post('/api/configuracoes/backup/manual', authorize('admin'), configuracoesController.iniciarBackupManual);
+app.post('/api/configuracoes/backup/restore', authorize('admin'), configuracoesController.restaurarBackup);
+app.get('/api/configuracoes/backup/status', authorize('admin'), configuracoesController.getStatusBackup);
 
 // =====================================================
 // ROTA DE FALLBACK PARA SPA (SINGLE PAGE APPLICATION)
@@ -225,7 +335,13 @@ app.get('/api/atividades/tipos', authorize('admin', 'instrutor', 'financeiro'), 
 
 // Para todas as outras rotas, servir o index.html do React
 app.get('*', (req, res) => {
-  res.sendFile(path.join(__dirname, 'frontend/index.html'));
+  // Em produção, servir o index.html do frontend
+  if (process.env.NODE_ENV === 'production') {
+    res.sendFile(path.join(__dirname, 'frontend/index.html'));
+  } else {
+    // Em desenvolvimento, redirecionar para o frontend
+    res.redirect('http://localhost:3000');
+  }
 });
 
 // =====================================================

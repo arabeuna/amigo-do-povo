@@ -1,6 +1,13 @@
 # Dependencies
 node_modules/
-*/node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Production builds
+apps/backend/frontend/
+build/
+dist/
 
 # Environment variables
 .env
@@ -11,10 +18,8 @@ node_modules/
 config.env
 
 # Logs
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-lerna-debug.log*
+logs
+*.log
 
 # Runtime data
 pids
@@ -24,25 +29,16 @@ pids
 
 # Coverage directory used by tools like istanbul
 coverage/
-*.lcov
 
 # nyc test coverage
 .nyc_output
 
 # Dependency directories
+node_modules/
 jspm_packages/
 
 # Optional npm cache directory
 .npm
-
-# Optional eslint cache
-.eslintcache
-
-# Microbundle cache
-.rpt2_cache/
-.rts2_cache_cjs/
-.rts2_cache_es/
-.rts2_cache_umd/
 
 # Optional REPL history
 .node_repl_history
@@ -53,34 +49,14 @@ jspm_packages/
 # Yarn Integrity file
 .yarn-integrity
 
-# parcel-bundler cache (https://parceljs.org/)
-.cache
-.parcel-cache
+# dotenv environment variables file
+.env
 
-# Next.js build output
-.next
-
-# Nuxt.js build / generate output
-.nuxt
-dist
-
-# Gatsby files
-.cache/
-
-# Storybook build outputs
-.out
-.storybook-out
-
-# Temporary folders
-tmp/
-temp/
-
-# Editor directories and files
+# IDE files
 .vscode/
 .idea/
 *.swp
 *.swo
-*~
 
 # OS generated files
 .DS_Store
@@ -91,10 +67,18 @@ temp/
 ehthumbs.db
 Thumbs.db
 
+# Uploads
+apps/backend/uploads/
+
+# Temporary files
+*.tmp
+*.temp
+
 # Database
 *.sqlite
 *.db
 
-# Build outputs
-build/
-dist/ 
+# SSL certificates
+*.pem
+*.key
+*.crt 

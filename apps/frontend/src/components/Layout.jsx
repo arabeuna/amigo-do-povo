@@ -27,7 +27,7 @@ const Layout = ({ children }) => {
     { name: 'Dashboard', href: '/dashboard', icon: Home },
     { name: 'Alunos', href: '/alunos', icon: Users },
     { name: 'Atividades', href: '/atividades', icon: Calendar },
-    { name: 'Frequência', href: '/frequencia', icon: CheckSquare },
+    { name: 'Frequência', href: '/frequencias', icon: CheckSquare },
     { name: 'Mensalidades', href: '/mensalidades', icon: DollarSign },
     { name: 'Relatórios', href: '/relatorios', icon: BarChart3 },
     { name: 'Configurações', href: '/configuracoes', icon: Settings },
