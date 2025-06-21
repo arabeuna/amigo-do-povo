@@ -47,9 +47,11 @@ api.interceptors.response.use(
     });
     
     if (error.response?.status === 401) {
-      console.log('🔒 Erro 401 detectado - verificando se é problema de rede');
+      console.log('🔒 Erro 401 detectado - NÃO fazendo logout automático temporariamente');
       console.log('📋 Detalhes do erro:', error.response?.data);
       
+      // DESABILITADO TEMPORARIAMENTE - Logout automático
+      /*
       // Só fazer logout se for claramente um problema de autenticação
       // e não um problema de rede ou servidor
       if (error.response?.data?.message?.includes('Token') || 
@@ -61,6 +63,7 @@ api.interceptors.response.use(
       } else {
         console.log('⚠️ Erro 401 pode ser temporário, não fazendo logout automático');
       }
+      */
     }
     return Promise.reject(error);
   }

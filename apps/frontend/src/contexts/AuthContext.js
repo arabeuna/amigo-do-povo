@@ -35,7 +35,10 @@ export const AuthProvider = ({ children }) => {
           setUser(JSON.parse(storedUser));
           
           console.log('✅ Dados carregados do localStorage');
+          console.log('⏸️ Verificação de token desabilitada temporariamente para resolver loop de login/logout');
           
+          // DESABILITADO TEMPORARIAMENTE - Verificação automática de token
+          /*
           // Verificar se o token ainda é válido (com timeout)
           console.log('🔍 Verificando validade do token...');
           const timeoutPromise = new Promise((_, reject) => 
@@ -55,20 +58,11 @@ export const AuthProvider = ({ children }) => {
             console.log('❌ Token inválido, fazendo logout');
             logout();
           }
+          */
         } catch (error) {
           console.error('💥 Erro ao verificar autenticação:', error);
-          
-          // Não fazer logout automático em caso de problemas de rede
-          if (error.message === 'Timeout' || error.code === 'NETWORK_ERROR') {
-            console.log('⚠️ Problema de rede detectado, mantendo login local');
-            // Manter o usuário logado localmente
-          } else if (error.response?.status === 401) {
-            console.log('❌ Token expirado, fazendo logout');
-            logout();
-          } else {
-            console.log('⚠️ Erro desconhecido, mantendo login local por segurança');
-            // Manter o usuário logado localmente em caso de erro desconhecido
-          }
+          console.log('⚠️ Erro na verificação, mas mantendo login local por segurança');
+          // Não fazer logout automático
         }
       } else {
         console.log('❌ Nenhum token ou usuário encontrado no localStorage');
