@@ -122,13 +122,47 @@ app.get('/', (req, res) => {
 });
 
 // Health check
-app.get('/api/health', (req, res) => {
-  res.json({
-    success: true,
-    message: 'Sistema Amigo do Povo - Backend funcionando!',
-    timestamp: new Date().toISOString(),
-    version: '1.0.0'
-  });
+app.get('/api/health', async (req, res) => {
+  try {
+    // Testar conexão com banco
+    const db = require('./config/database');
+    const dbResult = await db.query('SELECT NOW()');
+    
+    res.json({
+      success: true,
+      message: 'Sistema Amigo do Povo - Backend funcionando!',
+      timestamp: new Date().toISOString(),
+      version: '1.0.0',
+      database: {
+        connected: true,
+        timestamp: dbResult.rows[0].now
+      },
+      environment: {
+        node_env: process.env.NODE_ENV || 'development',
+        port: process.env.PORT || 5000,
+        db_host: process.env.DB_HOST || 'localhost',
+        db_name: process.env.DB_NAME || 'amigo_do_povo'
+      }
+    });
+  } catch (error) {
+    console.error('❌ Erro no health check:', error.message);
+    res.status(503).json({
+      success: false,
+      message: 'Sistema funcionando, mas banco de dados indisponível',
+      timestamp: new Date().toISOString(),
+      version: '1.0.0',
+      database: {
+        connected: false,
+        error: error.message
+      },
+      environment: {
+        node_env: process.env.NODE_ENV || 'development',
+        port: process.env.PORT || 5000,
+        db_host: process.env.DB_HOST || 'localhost',
+        db_name: process.env.DB_NAME || 'amigo_do_povo'
+      }
+    });
+  }
 });
 
 // Autenticação
@@ -201,24 +235,56 @@ app.use((error, req, res, next) => {
 // INICIALIZAÇÃO DO SERVIDOR
 // =====================================================
 
-app.listen(PORT, () => {
-  console.log(`🚀 Servidor rodando na porta ${PORT}`);
-  console.log(`📊 Ambiente: ${process.env.NODE_ENV || 'development'}`);
-  console.log(`🔗 URL: http://localhost:${PORT}`);
-  console.log(`📋 Health check: http://localhost:${PORT}/api/health`);
-  console.log(`🌐 Frontend: http://localhost:${PORT}`);
-  
-  // Verificar variáveis de ambiente importantes
-  console.log(`🔑 JWT_SECRET definido: ${process.env.JWT_SECRET ? 'Sim' : 'NÃO'}`);
-  if (process.env.JWT_SECRET) {
-    console.log(`🔑 JWT_SECRET length: ${process.env.JWT_SECRET.length}`);
-    console.log(`🔑 JWT_SECRET (primeiros 10 chars): ${process.env.JWT_SECRET.substring(0, 10)}...`);
+// Testar conexão com banco antes de iniciar o servidor
+const testDatabaseConnection = async () => {
+  try {
+    console.log('🔍 Testando conexão com banco de dados...');
+    const db = require('./config/database');
+    const result = await db.query('SELECT NOW()');
+    console.log('✅ Conexão com banco estabelecida:', result.rows[0].now);
+    return true;
+  } catch (error) {
+    console.error('❌ Erro na conexão com banco:', error.message);
+    console.error('❌ Código do erro:', error.code);
+    return false;
   }
-  
-  console.log(`🗄️ DB_HOST: ${process.env.DB_HOST || 'localhost'}`);
-  console.log(`🗄️ DB_NAME: ${process.env.DB_NAME || 'amigo_do_povo'}`);
-  console.log(`🗄️ DB_USER: ${process.env.DB_USER || 'postgres'}`);
-});
+};
+
+const startServer = async () => {
+  try {
+    // Testar conexão com banco
+    const dbConnected = await testDatabaseConnection();
+    
+    if (!dbConnected) {
+      console.log('⚠️ Banco não conectado, mas iniciando servidor mesmo assim...');
+    }
+    
+    app.listen(PORT, () => {
+      console.log(`🚀 Servidor rodando na porta ${PORT}`);
+      console.log(`📊 Ambiente: ${process.env.NODE_ENV || 'development'}`);
+      console.log(`🔗 URL: http://localhost:${PORT}`);
+      console.log(`📋 Health check: http://localhost:${PORT}/api/health`);
+      console.log(`🌐 Frontend: http://localhost:${PORT}`);
+      
+      // Verificar variáveis de ambiente importantes
+      console.log(`🔑 JWT_SECRET definido: ${process.env.JWT_SECRET ? 'Sim' : 'NÃO'}`);
+      if (process.env.JWT_SECRET) {
+        console.log(`🔑 JWT_SECRET length: ${process.env.JWT_SECRET.length}`);
+        console.log(`🔑 JWT_SECRET (primeiros 10 chars): ${process.env.JWT_SECRET.substring(0, 10)}...`);
+      }
+      
+      console.log(`🗄️ DB_HOST: ${process.env.DB_HOST || 'localhost'}`);
+      console.log(`🗄️ DB_NAME: ${process.env.DB_NAME || 'amigo_do_povo'}`);
+      console.log(`🗄️ DB_USER: ${process.env.DB_USER || 'postgres'}`);
+      console.log(`🗄️ DB_PASSWORD definido: ${process.env.DB_PASSWORD ? 'Sim' : 'NÃO'}`);
+    });
+  } catch (error) {
+    console.error('💥 Erro ao iniciar servidor:', error);
+    process.exit(1);
+  }
+};
+
+startServer();
 
 // Graceful shutdown
 process.on('SIGTERM', () => {
