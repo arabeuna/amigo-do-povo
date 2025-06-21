@@ -51,13 +51,79 @@ async function setupDatabase() {
           nome VARCHAR(100) NOT NULL,
           email VARCHAR(100) UNIQUE NOT NULL,
           senha VARCHAR(255) NOT NULL,
-          perfil VARCHAR(20) DEFAULT 'usuario',
+          perfil VARCHAR(20) DEFAULT 'admin',
           ativo BOOLEAN DEFAULT true,
           data_criacao TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         );
       `);
       
       console.log('✅ Tabela usuarios criada');
+      
+      // Criar tabela de atividades
+      await pool.query(`
+        CREATE TABLE IF NOT EXISTS atividades (
+          id SERIAL PRIMARY KEY,
+          nome VARCHAR(100) NOT NULL,
+          descricao TEXT,
+          tipo VARCHAR(50) NOT NULL,
+          dias_semana VARCHAR(50),
+          horario_inicio TIME,
+          horario_fim TIME,
+          instrutor_id INTEGER REFERENCES usuarios(id),
+          vagas_maximas INTEGER DEFAULT 30,
+          vagas_disponiveis INTEGER DEFAULT 30,
+          valor_mensalidade DECIMAL(10,2),
+          ativo BOOLEAN DEFAULT true,
+          data_criacao TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+      `);
+      
+      console.log('✅ Tabela atividades criada');
+      
+      // Criar tabela de alunos
+      await pool.query(`
+        CREATE TABLE IF NOT EXISTS alunos (
+          id SERIAL PRIMARY KEY,
+          nome VARCHAR(100) NOT NULL,
+          cpf VARCHAR(14) UNIQUE,
+          rg VARCHAR(20),
+          data_nascimento DATE,
+          sexo VARCHAR(1) CHECK (sexo IN ('M', 'F')),
+          telefone VARCHAR(20),
+          celular VARCHAR(20),
+          email VARCHAR(100),
+          endereco TEXT,
+          bairro VARCHAR(100),
+          cidade VARCHAR(100),
+          estado VARCHAR(2),
+          cep VARCHAR(10),
+          observacoes TEXT,
+          ativo BOOLEAN DEFAULT true,
+          data_criacao TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+      `);
+      
+      console.log('✅ Tabela alunos criada');
+      
+      // Criar tabela de matrículas
+      await pool.query(`
+        CREATE TABLE IF NOT EXISTS matriculas (
+          id SERIAL PRIMARY KEY,
+          aluno_id INTEGER REFERENCES alunos(id) ON DELETE CASCADE,
+          atividade_id INTEGER REFERENCES atividades(id) ON DELETE CASCADE,
+          status VARCHAR(20) DEFAULT 'ativa' CHECK (status IN ('ativa', 'inativa', 'cancelada', 'concluida')),
+          data_matricula DATE DEFAULT CURRENT_DATE,
+          data_inicio DATE,
+          data_fim DATE,
+          observacoes TEXT,
+          ativo BOOLEAN DEFAULT true,
+          data_criacao TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+          UNIQUE(aluno_id, atividade_id)
+        );
+      `);
+      
+      console.log('✅ Tabela matriculas criada');
+      
     } else {
       console.log('✅ Tabelas já existem');
     }
@@ -78,6 +144,22 @@ async function setupDatabase() {
       console.log('✅ Usuário admin criado com sucesso');
       console.log('📧 Email: admin@amigodopovo.com');
       console.log('🔑 Senha: 101520_Amigo');
+      
+      // Adicionar atividades de exemplo
+      await pool.query(`
+        INSERT INTO atividades (nome, descricao, tipo, valor_mensalidade) VALUES 
+        ('Dança', 'Aulas de dança para todas as idades', 'dança', 50.00),
+        ('Natação', 'Aulas de natação para iniciantes e avançados', 'natação', 80.00),
+        ('Bombeiro Mirim', 'Curso de formação de bombeiro mirim', 'bombeiro_mirim', 60.00),
+        ('Informática', 'Curso básico de informática', 'informática', 40.00),
+        ('Hidroginástica', 'Aulas de hidroginástica', 'hidroginástica', 70.00),
+        ('Funcional', 'Treinamento funcional', 'funcional', 60.00),
+        ('Fisioterapia', 'Atendimento fisioterapêutico', 'fisioterapia', 100.00),
+        ('Karatê', 'Aulas de karatê', 'karatê', 55.00)
+      `);
+      
+      console.log('✅ Atividades de exemplo criadas');
+      
     } else {
       console.log('✅ Usuário admin já existe');
     }

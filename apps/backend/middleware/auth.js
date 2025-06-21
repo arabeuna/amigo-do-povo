@@ -35,6 +35,10 @@ const auth = async (req, res, next) => {
       console.log('🔑 JWT_SECRET length:', process.env.JWT_SECRET.length);
     } else {
       console.log('❌ JWT_SECRET NÃO DEFINIDO!');
+      return res.status(500).json({ 
+        success: false, 
+        message: 'Erro de configuração do servidor' 
+      });
     }
     
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
@@ -62,6 +66,7 @@ const auth = async (req, res, next) => {
     req.user = result.rows[0];
     console.log('✅ Autenticação bem-sucedida para:', req.user.email);
     next();
+    
   } catch (error) {
     console.error('💥 Erro na autenticação:', error.message);
     console.error('💥 Tipo do erro:', error.name);
