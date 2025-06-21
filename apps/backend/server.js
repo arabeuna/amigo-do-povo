@@ -15,6 +15,13 @@ const app = express();
 const PORT = process.env.PORT || 5000;
 
 // =====================================================
+// CONFIGURAÇÃO PARA PRODUÇÃO (RENDER)
+// =====================================================
+
+// Configurar para confiar no proxy do Render
+app.set('trust proxy', 1);
+
+// =====================================================
 // MIDDLEWARES DE SEGURANÇA E PERFORMANCE
 // =====================================================
 
