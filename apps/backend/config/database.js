@@ -9,11 +9,12 @@ let poolConfig;
 
 if (usePooler) {
   // Configuração para pooler do Supabase (mais compatível com Render)
+  const projectRef = process.env.DB_HOST.split('.')[1]; // Extrair o project reference
   poolConfig = {
-    host: process.env.DB_HOST.replace('db.', 'aws-0-sa-east-1.pooler.supabase.com'),
+    host: `aws-0-sa-east-1.pooler.supabase.com`,
     port: 6543, // Porta do pooler
     database: process.env.DB_NAME || 'postgres',
-    user: process.env.DB_USER || 'postgres',
+    user: `${process.env.DB_USER || 'postgres'}.${projectRef}`, // Formato: postgres.projectref
     max: 20,
     idleTimeoutMillis: 30000,
     connectionTimeoutMillis: 10000,
@@ -48,7 +49,8 @@ console.log('🔧 Configuração do banco:', {
   database: poolConfig.database,
   user: poolConfig.user,
   usePooler,
-  isProduction
+  isProduction,
+  originalHost: process.env.DB_HOST
 });
 
 // For development, if no password is set, try without password
