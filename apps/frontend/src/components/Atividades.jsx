@@ -65,7 +65,16 @@ const Atividades = () => {
       setLoading(true);
       const response = await atividadesAPI.listar();
       console.log('✅ Atividades carregadas:', response.data);
-      setAtividades(response.data.data);
+      
+      // Garantir que atividades seja sempre um array
+      let atividadesData = response.data.data || response.data || [];
+      if (!Array.isArray(atividadesData)) {
+        console.warn('⚠️ Dados de atividades não são um array:', atividadesData);
+        atividadesData = [];
+      }
+      
+      console.log('📋 Atividades processadas:', atividadesData);
+      setAtividades(atividadesData);
     } catch (error) {
       console.error('💥 Erro ao carregar atividades:', error);
       console.error('📋 Detalhes do erro:', {
@@ -75,6 +84,7 @@ const Atividades = () => {
         config: error.config
       });
       toast.error('Erro ao carregar atividades');
+      setAtividades([]); // Garantir que seja um array vazio em caso de erro
     } finally {
       setLoading(false);
     }
@@ -168,12 +178,12 @@ const Atividades = () => {
     resetForm();
   };
 
-  const filteredAtividades = atividades.filter(atividade => {
+  const filteredAtividades = Array.isArray(atividades) ? atividades.filter(atividade => {
     const matchesSearch = atividade.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          atividade.descricao?.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesFilter = !filterTipo || atividade.tipo === filterTipo;
     return matchesSearch && matchesFilter;
-  });
+  }) : [];
 
   const formatDiasSemana = (dias) => {
     if (!dias) return 'Não definido';
