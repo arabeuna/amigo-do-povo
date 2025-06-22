@@ -274,13 +274,32 @@ const resetToken = () => {
 };
 
 // Verificar se está em produção e se o token está inválido
-if (window.location.hostname === 'amigo-do-povo.onrender.com') {
-  const token = localStorage.getItem('token');
-  if (token && token.length < 200) {
-    console.log('🔧 Detectado token inválido em produção, resetando...');
+const isProduction = window.location.hostname === 'amigo-do-povo.onrender.com';
+const currentToken = localStorage.getItem('token');
+
+if (isProduction) {
+  console.log('🌐 Detectado ambiente de produção');
+  
+  // Se não há token ou se o token é muito curto (inválido)
+  if (!currentToken || currentToken.length < 200) {
+    console.log('🔧 Token inválido detectado em produção, resetando...');
     resetToken();
+  } else {
+    console.log('✅ Token válido encontrado em produção');
   }
 }
+
+// Interceptor para detectar erros 401 em produção e corrigir automaticamente
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response?.status === 401 && isProduction) {
+      console.log('🔧 Erro 401 detectado em produção, resetando token...');
+      resetToken();
+    }
+    return Promise.reject(error);
+  }
+);
 
 // =====================================================
 // HORÁRIOS
