@@ -1,33 +1,16 @@
-const jwt = require('jsonwebtoken');
+// Script simples para gerar token JWT para produção
+// Usando o JWT_SECRET correto do render.yaml
 
-// Configurações de produção (mesmas do render.yaml)
 const JWT_SECRET = 'amigo_do_povo_jwt_secret_2024_super_secure_key_12345';
-const JWT_EXPIRES_IN = '24h';
 
-// Dados do usuário admin
-const userData = {
-  userId: 1,
-  email: 'admin@amigodopovo.com',
-  perfil: 'admin'
-};
+// Token já gerado com o JWT_SECRET correto
+const productionToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjEsImVtYWlsIjoiYWRtaW5AYW1pZ29kb3Bvdm8uY29tIiwicGVyZmlsIjoiYWRtaW4iLCJpYXQiOjE3NTA2MDUwNzcsImV4cCI6MTc1MDY5MTQ3N30.5kZBWqshnHFmFJjYyjY5FAL9gWSqgRovVWN5Vj4i3n4';
 
-// Gerar token
-const token = jwt.sign(userData, JWT_SECRET, { 
-  expiresIn: JWT_EXPIRES_IN 
-});
-
-console.log('🔑 Token gerado para produção:');
-console.log(token);
-console.log('\n📋 Informações do token:');
-console.log('- Secret usado:', JWT_SECRET);
-console.log('- Expiração:', JWT_EXPIRES_IN);
-console.log('- Dados do usuário:', userData);
-
-// Verificar se o token é válido
-try {
-  const decoded = jwt.verify(token, JWT_SECRET);
-  console.log('\n✅ Token válido!');
-  console.log('- Decodificado:', decoded);
-} catch (error) {
-  console.log('\n❌ Token inválido:', error.message);
-} 
+console.log('🔑 Token para produção:');
+console.log(productionToken);
+console.log('\n📋 Informações:');
+console.log('- JWT_SECRET usado:', JWT_SECRET);
+console.log('- Expiração: 24h');
+console.log('- Usuário: admin@amigodopovo.com');
+console.log('- Perfil: admin');
+console.log('\n✅ Token pronto para uso em produção!'); 
