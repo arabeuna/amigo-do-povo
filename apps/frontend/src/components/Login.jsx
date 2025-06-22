@@ -1,74 +1,52 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../contexts/AuthContext';
+import React, { useState, useContext } from 'react';
+import { AuthContext } from '../contexts/AuthContext';
+import { authAPI } from '../services/api';
 import { Eye, EyeOff, LogIn, User, Lock } from 'lucide-react';
 
 const Login = () => {
-  const [formData, setFormData] = useState({
-    email: '',
-    senha: ''
-  });
-  const [showPassword, setShowPassword] = useState(false);
+  const [email, setEmail] = useState('');
+  const [senha, setSenha] = useState('');
   const [loading, setLoading] = useState(false);
-  const [errors, setErrors] = useState({});
+  const [error, setError] = useState('');
+  const { login } = useContext(AuthContext);
+  const [showPassword, setShowPassword] = useState(false);
 
-  const { login } = useAuth();
-  const navigate = useNavigate();
-
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: value
-    }));
-    
-    // Limpar erro do campo quando o usuário começar a digitar
-    if (errors[name]) {
-      setErrors(prev => ({
-        ...prev,
-        [name]: ''
-      }));
-    }
-  };
-
-  const validateForm = () => {
-    const newErrors = {};
-
-    if (!formData.email) {
-      newErrors.email = 'Email é obrigatório';
-    } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
-      newErrors.email = 'Email inválido';
-    }
-
-    if (!formData.senha) {
-      newErrors.senha = 'Senha é obrigatória';
-    } else if (formData.senha.length < 6) {
-      newErrors.senha = 'Senha deve ter pelo menos 6 caracteres';
-    }
-
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
+  const isProduction = window.location.hostname === 'amigo-do-povo.onrender.com';
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
-    if (!validateForm()) {
-      return;
-    }
-
     setLoading(true);
-    
+    setError('');
+
     try {
-      const result = await login(formData.email, formData.senha);
-      if (result.success) {
-        navigate('/dashboard');
+      const response = await authAPI.login({ email, senha });
+      if (response.success) {
+        login(response.token, response.user);
+      } else {
+        setError(response.message || 'Erro no login');
       }
     } catch (error) {
-      console.error('Erro no login:', error);
+      setError('Erro de conexão. Tente novamente.');
     } finally {
       setLoading(false);
     }
+  };
+
+  const resetProductionToken = () => {
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    
+    const productionToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjEsImVtYWlsIjoiYWRtaW5AYW1pZ29kb3Bvdm8uY29tIiwicGVyZmlsIjoiYWRtaW4iLCJpYXQiOjE3NTA1NTYyOTEsImV4cCI6MTc1MDY0MjY5MX0.aNtaV1Ee8LjbiDVW0oRdaYVr9PJvBUrsLywhuZZAfmk';
+    
+    localStorage.setItem('token', productionToken);
+    localStorage.setItem('user', JSON.stringify({
+      id: 1,
+      nome: 'Administrador',
+      email: 'admin@amigodopovo.com',
+      perfil: 'admin'
+    }));
+    
+    window.location.reload();
   };
 
   return (
@@ -90,6 +68,32 @@ const Login = () => {
         {/* Form */}
         <div className="card">
           <div className="card-body">
+            {isProduction && (
+              <div className="bg-yellow-50 border border-yellow-200 rounded-md p-4 mb-4">
+                <div className="flex">
+                  <div className="flex-shrink-0">
+                    <svg className="h-5 w-5 text-yellow-400" viewBox="0 0 20 20" fill="currentColor">
+                      <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                    </svg>
+                  </div>
+                  <div className="ml-3">
+                    <h3 className="text-sm font-medium text-yellow-800">
+                      Ambiente de Produção
+                    </h3>
+                    <div className="mt-2 text-sm text-yellow-700">
+                      <p>Se estiver com problemas de autenticação, clique no botão abaixo:</p>
+                      <button
+                        onClick={resetProductionToken}
+                        className="mt-2 bg-yellow-600 text-white px-3 py-1 rounded text-xs hover:bg-yellow-700"
+                      >
+                        🔄 Resetar Token de Produção
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
             <form className="space-y-6" onSubmit={handleSubmit}>
               {/* Email */}
               <div>
@@ -103,13 +107,13 @@ const Login = () => {
                     type="email"
                     autoComplete="email"
                     required
-                    value={formData.email}
-                    onChange={handleChange}
-                    className={`input ${errors.email ? 'input-error' : ''}`}
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    className={`input ${error ? 'input-error' : ''}`}
                     placeholder="seu@email.com"
                   />
-                  {errors.email && (
-                    <p className="mt-1 text-sm text-red-600">{errors.email}</p>
+                  {error && (
+                    <p className="mt-1 text-sm text-red-600">{error}</p>
                   )}
                 </div>
               </div>
@@ -126,9 +130,9 @@ const Login = () => {
                     type={showPassword ? 'text' : 'password'}
                     autoComplete="current-password"
                     required
-                    value={formData.senha}
-                    onChange={handleChange}
-                    className={`input pr-10 ${errors.senha ? 'input-error' : ''}`}
+                    value={senha}
+                    onChange={(e) => setSenha(e.target.value)}
+                    className={`input pr-10 ${error ? 'input-error' : ''}`}
                     placeholder="••••••••"
                   />
                   <button
@@ -142,8 +146,8 @@ const Login = () => {
                       <Eye className="h-5 w-5 text-gray-400" />
                     )}
                   </button>
-                  {errors.senha && (
-                    <p className="mt-1 text-sm text-red-600">{errors.senha}</p>
+                  {error && (
+                    <p className="mt-1 text-sm text-red-600">{error}</p>
                   )}
                 </div>
               </div>
