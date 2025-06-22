@@ -1,42 +1,19 @@
 const { Pool } = require('pg');
 require('dotenv').config();
 
-// Usar pooler do Supabase se estiver em produção
-const isProduction = process.env.NODE_ENV === 'production';
-const usePooler = isProduction && process.env.DB_HOST && process.env.DB_HOST.includes('supabase');
-
-let poolConfig;
-
-if (usePooler) {
-  // Configuração para pooler do Supabase (mais compatível com Render)
-  const projectRef = process.env.DB_HOST.split('.')[1]; // Extrair o project reference
-  poolConfig = {
-    host: `aws-0-sa-east-1.pooler.supabase.com`,
-    port: 6543, // Porta do pooler
-    database: process.env.DB_NAME || 'postgres',
-    user: `${process.env.DB_USER || 'postgres'}.${projectRef}`, // Formato: postgres.projectref
-    max: 20,
-    idleTimeoutMillis: 30000,
-    connectionTimeoutMillis: 10000,
-    ssl: {
-      rejectUnauthorized: false
-    }
-  };
-} else {
-  // Configuração normal
-  poolConfig = {
-    host: process.env.DB_HOST || 'localhost',
-    port: process.env.DB_PORT || 5432,
-    database: process.env.DB_NAME || 'amigo_do_povo',
-    user: process.env.DB_USER || 'postgres',
-    max: 20,
-    idleTimeoutMillis: 30000,
-    connectionTimeoutMillis: 10000,
-    ssl: {
-      rejectUnauthorized: false
-    }
-  };
-}
+// Configuração simplificada para funcionar no Render
+const poolConfig = {
+  host: process.env.DB_HOST || 'localhost',
+  port: process.env.DB_PORT || 5432,
+  database: process.env.DB_NAME || 'postgres',
+  user: process.env.DB_USER || 'postgres',
+  max: 20,
+  idleTimeoutMillis: 30000,
+  connectionTimeoutMillis: 10000,
+  ssl: process.env.NODE_ENV === 'production' ? {
+    rejectUnauthorized: false
+  } : false
+};
 
 // Only add password if it's not empty
 if (process.env.DB_PASSWORD && process.env.DB_PASSWORD.trim() !== '') {
@@ -48,12 +25,11 @@ console.log('🔧 Configuração do banco:', {
   port: poolConfig.port,
   database: poolConfig.database,
   user: poolConfig.user,
-  usePooler,
-  isProduction,
+  isProduction: process.env.NODE_ENV === 'production',
   originalHost: process.env.DB_HOST
 });
 
-// For development, if no password is set, try without password
+// Criar pool de conexões
 const pool = new Pool(poolConfig);
 
 // Teste de conexão
@@ -81,6 +57,7 @@ pool.on('error', (err) => {
 const testConnection = async () => {
   try {
     await pool.query('SELECT NOW()');
+    console.log('✅ Conexão com banco estabelecida:', new Date().toISOString());
     return true;
   } catch (error) {
     console.error('❌ Falha na conexão com o banco:', error.message);
