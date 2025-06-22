@@ -75,12 +75,8 @@ CREATE TABLE atividades (
     nome VARCHAR(100) NOT NULL,
     descricao TEXT,
     tipo VARCHAR(50) NOT NULL, -- dança, natação, informática, etc.
-    dias_semana VARCHAR(50), -- "segunda,terça,quarta"
-    horario_inicio TIME,
-    horario_fim TIME,
-    instrutor_id UUID REFERENCES usuarios(id),
     vagas_maximas INTEGER DEFAULT 30,
-    vagas_disponiveis INTEGER DEFAULT 30,
+    vagas_totais INTEGER DEFAULT 30,
     valor_mensalidade DECIMAL(10,2),
     ativo BOOLEAN DEFAULT true,
     data_criacao TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -102,6 +98,7 @@ CREATE TABLE matriculas (
     ativo BOOLEAN DEFAULT true,
     data_criacao TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     data_atualizacao TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    horario_id INTEGER REFERENCES horarios_atividades(id) ON DELETE CASCADE,
     UNIQUE(aluno_id, atividade_id)
 );
 
@@ -117,6 +114,7 @@ CREATE TABLE frequencias (
     justificativa TEXT,
     registrado_por UUID REFERENCES usuarios(id),
     data_registro TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    horario_id INTEGER REFERENCES horarios_atividades(id) ON DELETE CASCADE,
     UNIQUE(aluno_id, atividade_id, data_aula)
 );
 
@@ -153,6 +151,27 @@ CREATE TABLE relatorios (
     exportado_por UUID REFERENCES usuarios(id),
     data_exportacao TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
+
+-- =====================================================
+-- TABELA DE HORÁRIOS DE ATIVIDADES
+-- =====================================================
+
+CREATE TABLE IF NOT EXISTS horarios_atividades (
+  id SERIAL PRIMARY KEY,
+  atividade_id INTEGER REFERENCES atividades(id) ON DELETE CASCADE,
+  dia_semana INTEGER NOT NULL CHECK (dia_semana >= 1 AND dia_semana <= 7), -- 1=Segunda, 7=Domingo
+  horario_inicio TIME NOT NULL,
+  horario_fim TIME NOT NULL,
+  vagas_disponiveis INTEGER DEFAULT 30,
+  ativo BOOLEAN DEFAULT true,
+  data_criacao TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE(atividade_id, dia_semana, horario_inicio)
+);
+
+-- Índices para performance
+CREATE INDEX IF NOT EXISTS idx_horarios_atividade_id ON horarios_atividades(atividade_id);
+CREATE INDEX IF NOT EXISTS idx_horarios_dia_semana ON horarios_atividades(dia_semana);
+CREATE INDEX IF NOT EXISTS idx_horarios_ativo ON horarios_atividades(ativo);
 
 -- =====================================================
 -- ÍNDICES PARA PERFORMANCE
@@ -239,4 +258,126 @@ BEGIN
         ON CONFLICT (aluno_id, atividade_id, mes, ano) DO NOTHING;
     END LOOP;
 END;
-$$ LANGUAGE plpgsql; 
+$$ LANGUAGE plpgsql;
+
+-- =====================================================
+-- ATUALIZAÇÃO DA TABELA ATIVIDADES
+-- =====================================================
+
+-- Remover colunas de horário da tabela atividades (serão movidas para horarios_atividades)
+ALTER TABLE atividades DROP COLUMN IF EXISTS dias_semana;
+ALTER TABLE atividades DROP COLUMN IF EXISTS horario_inicio;
+ALTER TABLE atividades DROP COLUMN IF EXISTS horario_fim;
+ALTER TABLE atividades DROP COLUMN IF EXISTS vagas_disponiveis;
+
+-- Adicionar coluna para vagas totais da atividade
+ALTER TABLE atividades ADD COLUMN IF NOT EXISTS vagas_totais INTEGER DEFAULT 30;
+
+-- =====================================================
+-- ATUALIZAÇÃO DA TABELA MATRÍCULAS
+-- =====================================================
+
+-- Adicionar referência ao horário específico
+ALTER TABLE matriculas ADD COLUMN IF NOT EXISTS horario_id INTEGER REFERENCES horarios_atividades(id) ON DELETE CASCADE;
+
+-- =====================================================
+-- ATUALIZAÇÃO DA TABELA FREQUÊNCIAS
+-- =====================================================
+
+-- Adicionar referência ao horário específico
+ALTER TABLE frequencias ADD COLUMN IF NOT EXISTS horario_id INTEGER REFERENCES horarios_atividades(id) ON DELETE CASCADE;
+
+-- =====================================================
+-- FUNÇÃO PARA ATUALIZAR VAGAS DISPONÍVEIS
+-- =====================================================
+
+CREATE OR REPLACE FUNCTION atualizar_vagas_disponiveis()
+RETURNS TRIGGER AS $$
+BEGIN
+  -- Atualizar vagas disponíveis no horário
+  UPDATE horarios_atividades 
+  SET vagas_disponiveis = vagas_disponiveis - 1
+  WHERE id = NEW.horario_id;
+  
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Trigger para matrículas
+DROP TRIGGER IF EXISTS trigger_atualizar_vagas_matricula ON matriculas;
+CREATE TRIGGER trigger_atualizar_vagas_matricula
+  AFTER INSERT ON matriculas
+  FOR EACH ROW
+  WHEN (NEW.horario_id IS NOT NULL)
+  EXECUTE FUNCTION atualizar_vagas_disponiveis();
+
+-- =====================================================
+-- FUNÇÃO PARA RESTAURAR VAGAS DISPONÍVEIS
+-- =====================================================
+
+CREATE OR REPLACE FUNCTION restaurar_vagas_disponiveis()
+RETURNS TRIGGER AS $$
+BEGIN
+  -- Restaurar vagas disponíveis no horário
+  UPDATE horarios_atividades 
+  SET vagas_disponiveis = vagas_disponiveis + 1
+  WHERE id = OLD.horario_id;
+  
+  RETURN OLD;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Trigger para cancelamento de matrículas
+DROP TRIGGER IF EXISTS trigger_restaurar_vagas_matricula ON matriculas;
+CREATE TRIGGER trigger_restaurar_vagas_matricula
+  AFTER DELETE ON matriculas
+  FOR EACH ROW
+  WHEN (OLD.horario_id IS NOT NULL)
+  EXECUTE FUNCTION restaurar_vagas_disponiveis();
+
+-- =====================================================
+-- DADOS DE EXEMPLO
+-- =====================================================
+
+-- Inserir horários para atividades existentes
+INSERT INTO horarios_atividades (atividade_id, dia_semana, horario_inicio, horario_fim, vagas_disponiveis) VALUES
+-- Informática: Segunda 8h, Terça 9h, Quarta 14h
+(4, 1, '08:00:00', '09:00:00', 15),
+(4, 2, '09:00:00', '10:00:00', 15),
+(4, 3, '14:00:00', '15:00:00', 15),
+
+-- Dança: Segunda 14h, Quarta 16h, Sexta 18h
+(1, 1, '14:00:00', '15:00:00', 20),
+(1, 3, '16:00:00', '17:00:00', 20),
+(1, 5, '18:00:00', '19:00:00', 20),
+
+-- Natação: Terça 7h, Quinta 8h, Sábado 9h
+(2, 2, '07:00:00', '08:00:00', 10),
+(2, 4, '08:00:00', '09:00:00', 10),
+(2, 6, '09:00:00', '10:00:00', 10),
+
+-- Bombeiro Mirim: Sábado 14h, Domingo 9h
+(3, 6, '14:00:00', '16:00:00', 25),
+(3, 7, '09:00:00', '11:00:00', 25),
+
+-- Hidroginástica: Segunda 7h, Quarta 7h, Sexta 7h
+(5, 1, '07:00:00', '08:00:00', 12),
+(5, 3, '07:00:00', '08:00:00', 12),
+(5, 5, '07:00:00', '08:00:00', 12),
+
+-- Funcional: Terça 18h, Quinta 18h
+(6, 2, '18:00:00', '19:00:00', 15),
+(6, 4, '18:00:00', '19:00:00', 15),
+
+-- Fisioterapia: Segunda a Sexta 8h-17h (horários flexíveis)
+(7, 1, '08:00:00', '17:00:00', 5),
+(7, 2, '08:00:00', '17:00:00', 5),
+(7, 3, '08:00:00', '17:00:00', 5),
+(7, 4, '08:00:00', '17:00:00', 5),
+(7, 5, '08:00:00', '17:00:00', 5),
+
+-- Karatê: Terça 19h, Quinta 19h, Sábado 10h
+(8, 2, '19:00:00', '20:00:00', 20),
+(8, 4, '19:00:00', '20:00:00', 20),
+(8, 6, '10:00:00', '11:00:00', 20)
+ON CONFLICT (atividade_id, dia_semana, horario_inicio) DO NOTHING; 

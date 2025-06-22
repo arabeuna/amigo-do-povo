@@ -15,6 +15,7 @@ const frequenciasController = require('./controllers/frequenciasController');
 const mensalidadesController = require('./controllers/mensalidadesController');
 const relatoriosController = require('./controllers/relatoriosController');
 const configuracoesController = require('./controllers/configuracoesController');
+const horariosController = require('./controllers/horariosController');
 const { validarCriarAluno, validarAtualizarAluno } = require('./validations/alunosValidation');
 
 const app = express();
@@ -281,6 +282,24 @@ app.post('/api/atividades', authorize('admin'), atividadesController.criarAtivid
 app.put('/api/atividades/:id', authorize('admin'), atividadesController.atualizarAtividade);
 app.delete('/api/atividades/:id', authorize('admin'), atividadesController.deletarAtividade);
 app.get('/api/atividades/tipos', authorize('admin', 'instrutor', 'financeiro'), atividadesController.listarTiposAtividades);
+
+// Horários de Atividades
+app.get('/api/horarios', authorize('admin', 'instrutor', 'financeiro'), horariosController.listarHorarios);
+
+// Importação e Exportação de Horários (DEVE VIR ANTES das rotas com :id)
+app.get('/api/horarios/exportar', authorize('admin', 'instrutor', 'financeiro'), horariosController.exportarHorarios);
+app.post('/api/horarios/importar', authorize('admin'), upload.single('arquivo'), horariosController.importarHorarios);
+app.get('/api/horarios/template', authorize('admin', 'instrutor', 'financeiro'), horariosController.downloadTemplate);
+
+app.get('/api/horarios/disponiveis', authorize('admin', 'instrutor', 'financeiro'), horariosController.listarHorariosDisponiveis);
+app.get('/api/horarios/dias-semana', authorize('admin', 'instrutor', 'financeiro'), horariosController.getDiasSemana);
+app.get('/api/horarios/:id', authorize('admin', 'instrutor', 'financeiro'), horariosController.buscarHorarioPorId);
+app.post('/api/horarios', authorize('admin'), horariosController.criarHorario);
+app.put('/api/horarios/:id', authorize('admin'), horariosController.atualizarHorario);
+app.delete('/api/horarios/:id', authorize('admin'), horariosController.deletarHorario);
+
+// Horários por atividade
+app.get('/api/atividades/:atividade_id/horarios', authorize('admin', 'instrutor', 'financeiro'), horariosController.listarHorarios);
 
 // Frequências
 app.get('/api/frequencias', authorize('admin', 'instrutor'), frequenciasController.listarFrequencias);

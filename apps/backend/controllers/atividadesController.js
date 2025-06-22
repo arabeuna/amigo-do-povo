@@ -41,13 +41,15 @@ const listarAtividades = async (req, res) => {
     const countResult = await db.query(countQuery, params);
     const total = parseInt(countResult.rows[0].count);
 
-    // Query principal
+    // Query principal com informações de horários
     const query = `
       SELECT 
         a.*,
         u.nome as instrutor_nome,
         u.email as instrutor_email,
-        (SELECT COUNT(*) FROM matriculas m WHERE m.atividade_id = a.id AND m.status = 'ativa' AND m.ativo = true) as alunos_matriculados
+        (SELECT COUNT(*) FROM matriculas m WHERE m.atividade_id = a.id AND m.status = 'ativa' AND m.ativo = true) as alunos_matriculados,
+        (SELECT COUNT(*) FROM horarios_atividades h WHERE h.atividade_id = a.id AND h.ativo = true) as total_horarios,
+        (SELECT COUNT(*) FROM horarios_atividades h WHERE h.atividade_id = a.id AND h.ativo = true AND h.vagas_disponiveis > 0) as horarios_disponiveis
       FROM atividades a 
       LEFT JOIN usuarios u ON a.instrutor_id = u.id 
       WHERE ${whereClause}
@@ -84,7 +86,8 @@ const buscarAtividadePorId = async (req, res) => {
   try {
     const { id } = req.params;
 
-    const query = `
+    // Buscar atividade
+    const atividadeQuery = `
       SELECT 
         a.*,
         u.nome as instrutor_nome,
@@ -94,18 +97,46 @@ const buscarAtividadePorId = async (req, res) => {
       WHERE a.id = $1 AND a.ativo = true
     `;
 
-    const result = await db.query(query, [id]);
+    const atividadeResult = await db.query(atividadeQuery, [id]);
 
-    if (result.rows.length === 0) {
+    if (atividadeResult.rows.length === 0) {
       return res.status(404).json({
         success: false,
         message: 'Atividade não encontrada'
       });
     }
 
+    // Buscar horários da atividade
+    const horariosQuery = `
+      SELECT 
+        h.id,
+        h.dia_semana,
+        h.horario_inicio,
+        h.horario_fim,
+        h.vagas_disponiveis,
+        h.ativo,
+        CASE h.dia_semana
+          WHEN 1 THEN 'Segunda-feira'
+          WHEN 2 THEN 'Terça-feira'
+          WHEN 3 THEN 'Quarta-feira'
+          WHEN 4 THEN 'Quinta-feira'
+          WHEN 5 THEN 'Sexta-feira'
+          WHEN 6 THEN 'Sábado'
+          WHEN 7 THEN 'Domingo'
+        END as dia_nome
+      FROM horarios_atividades h
+      WHERE h.atividade_id = $1 AND h.ativo = true
+      ORDER BY h.dia_semana, h.horario_inicio
+    `;
+
+    const horariosResult = await db.query(horariosQuery, [id]);
+
+    const atividade = atividadeResult.rows[0];
+    atividade.horarios = horariosResult.rows;
+
     res.json({
       success: true,
-      data: result.rows[0]
+      data: atividade
     });
 
   } catch (error) {
@@ -131,25 +162,20 @@ const criarAtividade = async (req, res) => {
       nome,
       descricao,
       tipo,
-      dias_semana,
-      horario_inicio,
-      horario_fim,
       instrutor_id,
-      vagas_maximas,
+      vagas_totais,
       valor_mensalidade
     } = req.body;
 
     const query = `
       INSERT INTO atividades (
-        nome, descricao, tipo, dias_semana, horario_inicio, horario_fim,
-        instrutor_id, vagas_maximas, vagas_disponiveis, valor_mensalidade
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $8, $9)
+        nome, descricao, tipo, instrutor_id, vagas_totais, valor_mensalidade
+      ) VALUES ($1, $2, $3, $4, $5, $6)
       RETURNING *
     `;
 
     const result = await db.query(query, [
-      nome, descricao, tipo, dias_semana, horario_inicio, horario_fim,
-      instrutor_id, vagas_maximas, valor_mensalidade
+      nome, descricao, tipo, instrutor_id, vagas_totais || 30, valor_mensalidade
     ]);
 
     res.status(201).json({
@@ -182,11 +208,8 @@ const atualizarAtividade = async (req, res) => {
       nome,
       descricao,
       tipo,
-      dias_semana,
-      horario_inicio,
-      horario_fim,
       instrutor_id,
-      vagas_maximas,
+      vagas_totais,
       valor_mensalidade
     } = req.body;
 
@@ -203,28 +226,57 @@ const atualizarAtividade = async (req, res) => {
       });
     }
 
-    // Calcular vagas disponíveis
-    const matriculasAtivas = await db.query(
-      'SELECT COUNT(*) FROM matriculas WHERE atividade_id = $1 AND status = $2 AND ativo = true',
-      [id, 'ativa']
-    );
-    
-    const alunosMatriculados = parseInt(matriculasAtivas.rows[0].count);
-    const vagasDisponiveis = Math.max(0, vagas_maximas - alunosMatriculados);
+    // Construir query de atualização
+    const updates = [];
+    const values = [];
+    let paramCount = 1;
 
+    if (nome !== undefined) {
+      updates.push(`nome = $${paramCount++}`);
+      values.push(nome);
+    }
+
+    if (descricao !== undefined) {
+      updates.push(`descricao = $${paramCount++}`);
+      values.push(descricao);
+    }
+
+    if (tipo !== undefined) {
+      updates.push(`tipo = $${paramCount++}`);
+      values.push(tipo);
+    }
+
+    if (instrutor_id !== undefined) {
+      updates.push(`instrutor_id = $${paramCount++}`);
+      values.push(instrutor_id);
+    }
+
+    if (vagas_totais !== undefined) {
+      updates.push(`vagas_totais = $${paramCount++}`);
+      values.push(vagas_totais);
+    }
+
+    if (valor_mensalidade !== undefined) {
+      updates.push(`valor_mensalidade = $${paramCount++}`);
+      values.push(valor_mensalidade);
+    }
+
+    if (updates.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'Nenhum campo foi fornecido para atualização'
+      });
+    }
+
+    values.push(id);
     const query = `
-      UPDATE atividades SET 
-        nome = $1, descricao = $2, tipo = $3, dias_semana = $4,
-        horario_inicio = $5, horario_fim = $6, instrutor_id = $7,
-        vagas_maximas = $8, vagas_disponiveis = $9, valor_mensalidade = $10
-      WHERE id = $11 AND ativo = true
+      UPDATE atividades 
+      SET ${updates.join(', ')}, data_atualizacao = CURRENT_TIMESTAMP
+      WHERE id = $${paramCount}
       RETURNING *
     `;
 
-    const result = await db.query(query, [
-      nome, descricao, tipo, dias_semana, horario_inicio, horario_fim,
-      instrutor_id, vagas_maximas, vagasDisponiveis, valor_mensalidade, id
-    ]);
+    const result = await db.query(query, values);
 
     res.json({
       success: true,

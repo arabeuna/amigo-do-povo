@@ -73,7 +73,7 @@ api.interceptors.response.use(
 // AUTENTICAÇÃO
 // =====================================================
 
-export const authAPI = {
+const authAPI = {
   login: (credentials) => api.post('/auth/login', credentials),
   register: (userData) => api.post('/auth/registrar', userData),
   me: () => api.get('/auth/me'),
@@ -84,7 +84,7 @@ export const authAPI = {
 // ALUNOS
 // =====================================================
 
-export const alunosAPI = {
+const alunosAPI = {
   listar: (params = {}) => api.get('/alunos', { params }),
   buscarPorId: (id) => api.get(`/alunos/${id}`),
   criar: (alunoData) => api.post('/alunos', alunoData),
@@ -107,7 +107,7 @@ export const alunosAPI = {
 // RESPONSÁVEIS
 // =====================================================
 
-export const responsaveisAPI = {
+const responsaveisAPI = {
   listar: (params = {}) => api.get('/responsaveis', { params }),
   buscarPorId: (id) => api.get(`/responsaveis/${id}`),
   criar: (responsavelData) => api.post('/responsaveis', responsavelData),
@@ -119,7 +119,7 @@ export const responsaveisAPI = {
 // ATIVIDADES
 // =====================================================
 
-export const atividadesAPI = {
+const atividadesAPI = {
   listar: (params = {}) => api.get('/atividades', { params }),
   buscarPorId: (id) => api.get(`/atividades/${id}`),
   criar: (atividadeData) => api.post('/atividades', atividadeData),
@@ -141,7 +141,7 @@ export const atividadesAPI = {
 // MATRÍCULAS
 // =====================================================
 
-export const matriculasAPI = {
+const matriculasAPI = {
   listar: (params = {}) => api.get('/matriculas', { params }),
   buscarPorId: (id) => api.get(`/matriculas/${id}`),
   criar: (matriculaData) => api.post('/matriculas', matriculaData),
@@ -153,7 +153,7 @@ export const matriculasAPI = {
 // FREQUÊNCIAS
 // =====================================================
 
-export const frequenciasAPI = {
+const frequenciasAPI = {
   listar: (params = {}) => api.get('/frequencias', { params }),
   buscarPorId: (id) => api.get(`/frequencias/${id}`),
   registrar: (frequenciaData) => api.post('/frequencias', frequenciaData),
@@ -179,7 +179,7 @@ export const frequenciasAPI = {
 // MENSALIDADES
 // =====================================================
 
-export const mensalidadesAPI = {
+const mensalidadesAPI = {
   listar: (params = {}) => api.get('/mensalidades', { params }),
   buscarPorId: (id) => api.get(`/mensalidades/${id}`),
   criar: (mensalidadeData) => api.post('/mensalidades', mensalidadeData),
@@ -203,7 +203,7 @@ export const mensalidadesAPI = {
 // RELATÓRIOS
 // =====================================================
 
-export const relatoriosAPI = {
+const relatoriosAPI = {
   exportarAlunos: (params = {}) => api.get('/relatorios/alunos/exportar', { 
     params,
     responseType: 'blob'
@@ -223,7 +223,7 @@ export const relatoriosAPI = {
 // USUÁRIOS
 // =====================================================
 
-export const usuariosAPI = {
+const usuariosAPI = {
   listar: (params = {}) => api.get('/usuarios', { params }),
   buscarPorId: (id) => api.get(`/usuarios/${id}`),
   criar: (usuarioData) => api.post('/usuarios', usuarioData),
@@ -235,8 +235,57 @@ export const usuariosAPI = {
 // UTILITÁRIOS
 // =====================================================
 
-export const utilsAPI = {
+const utilsAPI = {
   health: () => api.get('/health'),
 };
 
-export default api; 
+// =====================================================
+// CONFIGURAÇÕES
+// =====================================================
+
+const configuracoesAPI = {
+  listar: () => api.get('/configuracoes'),
+  atualizar: (configData) => api.put('/configuracoes', configData),
+};
+
+// =====================================================
+// HORÁRIOS
+// =====================================================
+
+const horariosAPI = {
+  listar: (params = {}) => api.get('/horarios', { params }),
+  listarDisponiveis: (params = {}) => api.get('/horarios/disponiveis', { params }),
+  buscarPorId: (id) => api.get(`/horarios/${id}`),
+  criar: (data) => api.post('/horarios', data),
+  atualizar: (id, data) => api.put(`/horarios/${id}`, data),
+  deletar: (id) => api.delete(`/horarios/${id}`),
+  getDiasSemana: () => api.get('/horarios/dias-semana'),
+  listarPorAtividade: (atividadeId) => api.get(`/atividades/${atividadeId}/horarios`),
+  exportar: (params = {}) => api.get('/horarios/exportar', { 
+    params,
+    responseType: 'blob'
+  }),
+  importar: (formData) => api.post('/horarios/importar', formData, {
+    headers: { 'Content-Type': 'multipart/form-data' }
+  }),
+  downloadTemplate: () => api.get('/horarios/template', {
+    responseType: 'blob'
+  }),
+};
+
+export default api;
+
+export {
+  authAPI,
+  alunosAPI,
+  responsaveisAPI,
+  atividadesAPI,
+  matriculasAPI,
+  frequenciasAPI,
+  mensalidadesAPI,
+  relatoriosAPI,
+  usuariosAPI,
+  utilsAPI,
+  configuracoesAPI,
+  horariosAPI
+}; 

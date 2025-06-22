@@ -7,6 +7,7 @@ import Dashboard from './components/Dashboard';
 import Layout from './components/Layout';
 import Alunos from './components/Alunos';
 import Atividades from './components/Atividades';
+import Horarios from './components/Horarios';
 import Frequencias from './components/Frequencias';
 import Mensalidades from './components/Mensalidades';
 import Relatorios from './components/Relatorios';
@@ -80,6 +81,17 @@ const AppContent = () => {
             <ProtectedRoute>
               <Layout>
                 <Atividades />
+              </Layout>
+            </ProtectedRoute>
+          }
+        />
+        
+        <Route
+          path="/horarios"
+          element={
+            <ProtectedRoute>
+              <Layout>
+                <Horarios />
               </Layout>
             </ProtectedRoute>
           }

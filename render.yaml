@@ -30,5 +30,16 @@ services:
         value: 900000
       - key: RATE_LIMIT_MAX_REQUESTS
         value: 100
+      - key: LOG_LEVEL
+        value: info
+      - key: UPLOAD_MAX_SIZE
+        value: 5242880
     healthCheckPath: /api/health
-    autoDeploy: true 
+    autoDeploy: true
+    buildFilter:
+      paths:
+        - apps/backend/**
+        - apps/frontend/**
+        - package.json
+        - render.yaml
+        - copy-frontend.js 
