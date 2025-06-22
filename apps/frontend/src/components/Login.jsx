@@ -1,17 +1,37 @@
-import React, { useState, useContext } from 'react';
+import React, { useState, useContext, useEffect } from 'react';
 import { AuthContext } from '../contexts/AuthContext';
-import { authAPI } from '../services/api';
-import { Eye, EyeOff, LogIn, User, Lock } from 'lucide-react';
+import { Eye, EyeOff, LogIn, User } from 'lucide-react';
 
 const Login = () => {
   const [email, setEmail] = useState('');
   const [senha, setSenha] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const { login } = useContext(AuthContext);
+  const { login, isAuthenticated, loading: authLoading } = useContext(AuthContext);
   const [showPassword, setShowPassword] = useState(false);
 
   const isProduction = window.location.hostname === 'amigo-do-povo.onrender.com';
+
+  // Redirecionar se já estiver autenticado
+  useEffect(() => {
+    if (!authLoading && isAuthenticated()) {
+      window.location.href = '/dashboard';
+    }
+  }, [authLoading, isAuthenticated]);
+
+  // Se ainda está carregando, mostrar loading
+  if (authLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="spinner h-8 w-8"></div>
+      </div>
+    );
+  }
+
+  // Se já está autenticado, não mostrar nada (será redirecionado)
+  if (isAuthenticated()) {
+    return null;
+  }
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -19,13 +39,12 @@ const Login = () => {
     setError('');
 
     try {
-      const response = await authAPI.login({ email, senha });
-      if (response.success) {
-        login(response.token, response.user);
-      } else {
-        setError(response.message || 'Erro no login');
+      const result = await login(email, senha);
+      if (!result.success) {
+        setError(result.message);
       }
     } catch (error) {
+      console.error('❌ Erro no login:', error);
       setError('Erro de conexão. Tente novamente.');
     } finally {
       setLoading(false);

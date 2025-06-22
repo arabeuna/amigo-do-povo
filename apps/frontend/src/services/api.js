@@ -47,23 +47,10 @@ api.interceptors.response.use(
     });
     
     if (error.response?.status === 401) {
-      console.log('🔒 Erro 401 detectado - NÃO fazendo logout automático temporariamente');
-      console.log('📋 Detalhes do erro:', error.response?.data);
-      
-      // DESABILITADO TEMPORARIAMENTE - Logout automático
-      /*
-      // Só fazer logout se for claramente um problema de autenticação
-      // e não um problema de rede ou servidor
-      if (error.response?.data?.message?.includes('Token') || 
-          error.response?.data?.message?.includes('Unauthorized')) {
-        console.log('🔒 Problema de autenticação confirmado, fazendo logout');
-        localStorage.removeItem('token');
-        localStorage.removeItem('user');
-        window.location.href = '/login';
-      } else {
-        console.log('⚠️ Erro 401 pode ser temporário, não fazendo logout automático');
-      }
-      */
+      console.log('🔒 Erro 401 detectado - fazendo logout automático');
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
+      window.location.href = '/login';
     }
     return Promise.reject(error);
   }
@@ -259,7 +246,7 @@ const resetToken = () => {
   console.log('🔧 Token limpo do localStorage');
   
   // Gerar novo token para produção (válido por 24h)
-  const productionToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjEsImVtYWlsIjoiYWRtaW5AYW1pZ29kb3Bvdm8uY29tIiwicGVyZmlsIjoiYWRtaW4iLCJpYXQiOjE3NTA1NTYyOTEsImV4cCI6MTc1MDY0MjY5MX0.aNtaV1Ee8LjbiDVW0oRdaYVr9PJvBUrsLywhuZZAfmk';
+  const productionToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjEsImVtYWlsIjoiYWRtaW5AYW1pZ29kb3Bvdm8uY29tIiwicGVyZmlsIjoiYWRtaW4iLCJpYXQiOjE3NTA1OTY4NzIsImV4cCI6MTc1MDY4MzI3Mn0.Z_TukVI2Djo6XGXJnc_9H7y_50s4-awu5vcM7IfcMTw';
   
   localStorage.setItem('token', productionToken);
   localStorage.setItem('user', JSON.stringify({

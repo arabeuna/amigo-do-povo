@@ -29,6 +29,17 @@ const PORT = process.env.PORT || 5000;
 app.set('trust proxy', 1);
 
 // =====================================================
+// CORS - DEVE VIR PRIMEIRO
+// =====================================================
+
+app.use(cors({
+  origin: ['http://localhost:3000', 'http://127.0.0.1:3000', 'http://192.168.1.5:3000'],
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'x-auth-token']
+}));
+
+// =====================================================
 // MIDDLEWARES DE SEGURANÇA E PERFORMANCE
 // =====================================================
 
@@ -92,17 +103,15 @@ app.use(helmet());
 // Compressão
 app.use(compression());
 
-// CORS
-app.use(cors({
-  origin: ['http://localhost:3000', 'http://127.0.0.1:3000', 'http://192.168.1.5:3000'],
-  credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'x-auth-token']
-}));
-
 // Body parsing
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+
+// =====================================================
+// MIDDLEWARE PARA REQUISIÇÕES OPTIONS (PREFLIGHT)
+// =====================================================
+
+app.options('*', cors());
 
 // =====================================================
 // CONFIGURAÇÃO DE ARQUIVOS ESTÁTICOS PARA PRODUÇÃO

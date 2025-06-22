@@ -71,6 +71,12 @@ export const AuthProvider = ({ children }) => {
         console.log('💾 Dados salvos no localStorage');
         
         toast.success('Login realizado com sucesso!');
+        
+        // Redirecionar para o dashboard após login bem-sucedido
+        setTimeout(() => {
+          window.location.href = '/dashboard';
+        }, 1000);
+        
         return { success: true };
       } else {
         console.log('❌ Login falhou:', response.data.message);
