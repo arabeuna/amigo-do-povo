@@ -221,18 +221,8 @@ app.get('/api/test-public', (req, res) => {
 });
 
 // Configuração do multer para upload de arquivos
-const storage = multer.diskStorage({
-  destination: function (req, file, cb) {
-    cb(null, 'uploads/');
-  },
-  filename: function (req, file, cb) {
-    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-    cb(null, file.fieldname + '-' + uniqueSuffix + '.' + file.originalname.split('.').pop());
-  }
-});
-
 const upload = multer({ 
-  storage: storage,
+  storage: multer.memoryStorage(),
   fileFilter: function (req, file, cb) {
     const allowedTypes = ['csv', 'xlsx', 'xls'];
     const fileExtension = file.originalname.split('.').pop().toLowerCase();
@@ -247,12 +237,6 @@ const upload = multer({
     fileSize: 5 * 1024 * 1024 // 5MB
   }
 });
-
-// Criar diretório de uploads se não existir
-const fs = require('fs');
-if (!fs.existsSync('uploads')) {
-  fs.mkdirSync('uploads');
-}
 
 // Alunos
 app.get('/api/alunos', authorize('admin', 'instrutor', 'financeiro'), alunosController.listarAlunos);

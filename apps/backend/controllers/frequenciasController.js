@@ -7,240 +7,240 @@ const fs = require('fs');
 const frequenciasController = {
   // Listar frequências com filtros
   async listarFrequencias(req, res) {
-    try {
-      const { 
-        pagina = 1, 
-        limite = 10, 
-        data_inicio,
-        data_fim,
-        atividade_id,
-        aluno_id,
-        presente
-      } = req.query;
+  try {
+    const { 
+      pagina = 1, 
+      limite = 10, 
+      data_inicio,
+      data_fim,
+      atividade_id,
+      aluno_id,
+      presente
+    } = req.query;
 
-      const offset = (pagina - 1) * limite;
-      let whereConditions = ['f.id IS NOT NULL'];
-      let params = [];
-      let paramIndex = 1;
+    const offset = (pagina - 1) * limite;
+    let whereConditions = ['f.id IS NOT NULL'];
+    let params = [];
+    let paramIndex = 1;
 
-      if (data_inicio) {
-        whereConditions.push(`f.data_aula >= $${paramIndex}`);
-        params.push(data_inicio);
-        paramIndex++;
-      }
-
-      if (data_fim) {
-        whereConditions.push(`f.data_aula <= $${paramIndex}`);
-        params.push(data_fim);
-        paramIndex++;
-      }
-
-      if (atividade_id) {
-        whereConditions.push(`f.atividade_id = $${paramIndex}`);
-        params.push(atividade_id);
-        paramIndex++;
-      }
-
-      if (aluno_id) {
-        whereConditions.push(`f.aluno_id = $${paramIndex}`);
-        params.push(aluno_id);
-        paramIndex++;
-      }
-
-      if (presente !== undefined && presente !== '') {
-        whereConditions.push(`f.presente = $${paramIndex}`);
-        params.push(presente === 'true');
-        paramIndex++;
-      }
-
-      const whereClause = whereConditions.join(' AND ');
-
-      // Query para contar total de registros
-      const countQuery = `
-        SELECT COUNT(*) 
-        FROM frequencias f
-        JOIN alunos a ON f.aluno_id = a.id
-        JOIN atividades at ON f.atividade_id = at.id
-        WHERE ${whereClause}
-      `;
-      
-      const countResult = await db.query(countQuery, params);
-      const total = parseInt(countResult.rows[0].count);
-
-      // Query principal
-      const query = `
-        SELECT 
-          f.*,
-          a.nome as aluno_nome,
-          a.cpf as aluno_cpf,
-          at.nome as atividade_nome,
-          at.tipo as atividade_tipo,
-          u.nome as registrado_por_nome
-        FROM frequencias f
-        JOIN alunos a ON f.aluno_id = a.id
-        JOIN atividades at ON f.atividade_id = at.id
-        LEFT JOIN usuarios u ON f.registrado_por = u.id
-        WHERE ${whereClause}
-        ORDER BY f.data_aula DESC, a.nome
-        LIMIT $${paramIndex} OFFSET $${paramIndex + 1}
-      `;
-
-      params.push(limite, offset);
-      const result = await db.query(query, params);
-
-      res.json({
-        success: true,
-        data: {
-          frequencias: result.rows,
-          paginacao: {
-            pagina: parseInt(pagina),
-            limite: parseInt(limite),
-            total,
-            totalPaginas: Math.ceil(total / limite)
-          }
-        }
-      });
-
-    } catch (error) {
-      console.error('Erro ao listar frequências:', error);
-      res.status(500).json({
-        success: false,
-        message: 'Erro interno do servidor'
-      });
+    if (data_inicio) {
+      whereConditions.push(`f.data_aula >= $${paramIndex}`);
+      params.push(data_inicio);
+      paramIndex++;
     }
+
+    if (data_fim) {
+      whereConditions.push(`f.data_aula <= $${paramIndex}`);
+      params.push(data_fim);
+      paramIndex++;
+    }
+
+    if (atividade_id) {
+      whereConditions.push(`f.atividade_id = $${paramIndex}`);
+      params.push(atividade_id);
+      paramIndex++;
+    }
+
+    if (aluno_id) {
+      whereConditions.push(`f.aluno_id = $${paramIndex}`);
+      params.push(aluno_id);
+      paramIndex++;
+    }
+
+    if (presente !== undefined && presente !== '') {
+      whereConditions.push(`f.presente = $${paramIndex}`);
+      params.push(presente === 'true');
+      paramIndex++;
+    }
+
+    const whereClause = whereConditions.join(' AND ');
+
+    // Query para contar total de registros
+    const countQuery = `
+      SELECT COUNT(*) 
+      FROM frequencias f
+      JOIN alunos a ON f.aluno_id = a.id
+      JOIN atividades at ON f.atividade_id = at.id
+      WHERE ${whereClause}
+    `;
+    
+    const countResult = await db.query(countQuery, params);
+    const total = parseInt(countResult.rows[0].count);
+
+    // Query principal
+    const query = `
+      SELECT 
+        f.*,
+        a.nome as aluno_nome,
+        a.cpf as aluno_cpf,
+        at.nome as atividade_nome,
+        at.tipo as atividade_tipo,
+        u.nome as registrado_por_nome
+      FROM frequencias f
+      JOIN alunos a ON f.aluno_id = a.id
+      JOIN atividades at ON f.atividade_id = at.id
+      LEFT JOIN usuarios u ON f.registrado_por = u.id
+      WHERE ${whereClause}
+      ORDER BY f.data_aula DESC, a.nome
+      LIMIT $${paramIndex} OFFSET $${paramIndex + 1}
+    `;
+
+    params.push(limite, offset);
+    const result = await db.query(query, params);
+
+    res.json({
+      success: true,
+      data: {
+        frequencias: result.rows,
+        paginacao: {
+          pagina: parseInt(pagina),
+          limite: parseInt(limite),
+          total,
+          totalPaginas: Math.ceil(total / limite)
+        }
+      }
+    });
+
+  } catch (error) {
+    console.error('Erro ao listar frequências:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Erro interno do servidor'
+    });
+  }
   },
 
   // Buscar frequência por ID
   async buscarFrequenciaPorId(req, res) {
-    try {
-      const { id } = req.params;
+  try {
+    const { id } = req.params;
 
-      const query = `
-        SELECT 
-          f.*,
-          a.nome as aluno_nome,
-          a.cpf as aluno_cpf,
-          at.nome as atividade_nome,
-          at.tipo as atividade_tipo,
-          u.nome as registrado_por_nome
-        FROM frequencias f
-        JOIN alunos a ON f.aluno_id = a.id
-        JOIN atividades at ON f.atividade_id = at.id
-        LEFT JOIN usuarios u ON f.registrado_por = u.id
-        WHERE f.id = $1
-      `;
+    const query = `
+      SELECT 
+        f.*,
+        a.nome as aluno_nome,
+        a.cpf as aluno_cpf,
+        at.nome as atividade_nome,
+        at.tipo as atividade_tipo,
+        u.nome as registrado_por_nome
+      FROM frequencias f
+      JOIN alunos a ON f.aluno_id = a.id
+      JOIN atividades at ON f.atividade_id = at.id
+      LEFT JOIN usuarios u ON f.registrado_por = u.id
+      WHERE f.id = $1
+    `;
 
-      const result = await db.query(query, [id]);
+    const result = await db.query(query, [id]);
 
-      if (result.rows.length === 0) {
-        return res.status(404).json({
-          success: false,
-          message: 'Frequência não encontrada'
-        });
-      }
-
-      res.json({
-        success: true,
-        data: result.rows[0]
-      });
-
-    } catch (error) {
-      console.error('Erro ao buscar frequência:', error);
-      res.status(500).json({
+    if (result.rows.length === 0) {
+      return res.status(404).json({
         success: false,
-        message: 'Erro interno do servidor'
+        message: 'Frequência não encontrada'
       });
     }
+
+    res.json({
+      success: true,
+      data: result.rows[0]
+    });
+
+  } catch (error) {
+    console.error('Erro ao buscar frequência:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Erro interno do servidor'
+    });
+  }
   },
 
   // Registrar frequência
   async registrarFrequencia(req, res) {
-    try {
-      const errors = validationResult(req);
-      if (!errors.isEmpty()) {
-        return res.status(400).json({ 
-          success: false, 
-          errors: errors.array() 
-        });
-      }
-
-      const {
-        aluno_id,
-        atividade_id,
-        data_aula,
-        presente,
-        justificativa
-      } = req.body;
-
-      const registrado_por = req.user.id;
-
-      // Verificar se aluno está matriculado na atividade
-      const matricula = await db.query(
-        'SELECT id FROM matriculas WHERE aluno_id = $1 AND atividade_id = $2 AND status = $3 AND ativo = true',
-        [aluno_id, atividade_id, 'ativa']
-      );
-
-      if (matricula.rows.length === 0) {
-        return res.status(400).json({
-          success: false,
-          message: 'Aluno não está matriculado nesta atividade'
-        });
-      }
-
-      // Verificar se já existe frequência para esta data
-      const frequenciaExistente = await db.query(
-        'SELECT id FROM frequencias WHERE aluno_id = $1 AND atividade_id = $2 AND data_aula = $3',
-        [aluno_id, atividade_id, data_aula]
-      );
-
-      if (frequenciaExistente.rows.length > 0) {
-        return res.status(400).json({
-          success: false,
-          message: 'Frequência já registrada para esta data'
-        });
-      }
-
-      const query = `
-        INSERT INTO frequencias (
-          aluno_id, atividade_id, data_aula, presente, justificativa, registrado_por
-        ) VALUES ($1, $2, $3, $4, $5, $6)
-        RETURNING *
-      `;
-
-      const result = await db.query(query, [
-        aluno_id, atividade_id, data_aula, presente, justificativa, registrado_por
-      ]);
-
-      res.json({
-        success: true,
-        message: 'Frequência registrada com sucesso',
-        data: result.rows[0]
-      });
-
-    } catch (error) {
-      console.error('Erro ao registrar frequência:', error);
-      res.status(500).json({
-        success: false,
-        message: 'Erro interno do servidor'
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ 
+        success: false, 
+        errors: errors.array() 
       });
     }
+
+    const {
+      aluno_id,
+      atividade_id,
+      data_aula,
+      presente,
+      justificativa
+    } = req.body;
+
+    const registrado_por = req.user.id;
+
+    // Verificar se aluno está matriculado na atividade
+    const matricula = await db.query(
+      'SELECT id FROM matriculas WHERE aluno_id = $1 AND atividade_id = $2 AND status = $3 AND ativo = true',
+      [aluno_id, atividade_id, 'ativa']
+    );
+
+    if (matricula.rows.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'Aluno não está matriculado nesta atividade'
+      });
+    }
+
+    // Verificar se já existe frequência para esta data
+    const frequenciaExistente = await db.query(
+      'SELECT id FROM frequencias WHERE aluno_id = $1 AND atividade_id = $2 AND data_aula = $3',
+      [aluno_id, atividade_id, data_aula]
+    );
+
+    if (frequenciaExistente.rows.length > 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'Frequência já registrada para esta data'
+      });
+    }
+
+    const query = `
+      INSERT INTO frequencias (
+        aluno_id, atividade_id, data_aula, presente, justificativa, registrado_por
+      ) VALUES ($1, $2, $3, $4, $5, $6)
+      RETURNING *
+    `;
+
+    const result = await db.query(query, [
+      aluno_id, atividade_id, data_aula, presente, justificativa, registrado_por
+    ]);
+
+      res.json({
+      success: true,
+      message: 'Frequência registrada com sucesso',
+      data: result.rows[0]
+    });
+
+  } catch (error) {
+    console.error('Erro ao registrar frequência:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Erro interno do servidor'
+    });
+  }
   },
 
   // Registrar frequência em lote
   async registrarFrequenciaEmLote(req, res) {
     try {
       const { atividade_id, data_frequencia, frequencias } = req.body;
-      const registrado_por = req.user.id;
+    const registrado_por = req.user.id;
 
       if (!atividade_id || !data_frequencia || !frequencias || !Array.isArray(frequencias)) {
-        return res.status(400).json({
-          success: false,
+      return res.status(400).json({
+        success: false,
           message: 'Dados inválidos para registro em lote'
         });
       }
 
       const results = [];
-      
+
       for (const freq of frequencias) {
         const { aluno_id, presente, justificativa, observacoes } = freq;
         
@@ -248,17 +248,17 @@ const frequenciasController = {
           // Verificar se a matrícula existe
           const matriculaCheck = await db.query(
             'SELECT id FROM matriculas WHERE aluno_id = $1 AND atividade_id = $2 AND status = $3',
-            [aluno_id, atividade_id, 'ativa']
-          );
+          [aluno_id, atividade_id, 'ativa']
+        );
 
           if (matriculaCheck.rows.length === 0) {
             results.push({
-              aluno_id,
+            aluno_id,
               success: false,
               message: 'Aluno não matriculado ou matrícula inativa'
-            });
-            continue;
-          }
+          });
+          continue;
+        }
 
           // Verificar se já existe registro
           const existingCheck = await db.query(
@@ -282,7 +282,7 @@ const frequenciasController = {
               message: 'Frequência atualizada',
               data: result.rows[0]
             });
-          } else {
+        } else {
             // Inserir novo
             const result = await db.query(
               `INSERT INTO frequencias (aluno_id, atividade_id, data_frequencia, presente, justificativa, observacoes, registrado_por)
@@ -314,17 +314,17 @@ const frequenciasController = {
       });
     } catch (error) {
       console.error('Erro no registro em lote:', error);
-      res.status(500).json({
-        success: false,
-        message: 'Erro interno do servidor'
-      });
-    }
+    res.status(500).json({
+      success: false,
+      message: 'Erro interno do servidor'
+    });
+  }
   },
 
   // Atualizar frequência
   async atualizarFrequencia(req, res) {
     try {
-      const { id } = req.params;
+    const { id } = req.params;
       const { presente, justificativa, observacoes } = req.body;
 
       const query = `
@@ -337,53 +337,53 @@ const frequenciasController = {
       const result = await db.query(query, [presente, justificativa, observacoes, id]);
 
       if (result.rows.length === 0) {
-        return res.status(404).json({
-          success: false,
-          message: 'Frequência não encontrada'
-        });
-      }
-
-      res.json({
-        success: true,
-        message: 'Frequência atualizada com sucesso',
-        data: result.rows[0]
-      });
-
-    } catch (error) {
-      console.error('Erro ao atualizar frequência:', error);
-      res.status(500).json({
+      return res.status(404).json({
         success: false,
-        message: 'Erro interno do servidor'
+        message: 'Frequência não encontrada'
       });
     }
+
+    res.json({
+      success: true,
+      message: 'Frequência atualizada com sucesso',
+      data: result.rows[0]
+    });
+
+  } catch (error) {
+    console.error('Erro ao atualizar frequência:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Erro interno do servidor'
+    });
+  }
   },
 
   // Deletar frequência
   async deletarFrequencia(req, res) {
-    try {
-      const { id } = req.params;
+  try {
+    const { id } = req.params;
 
       const result = await db.query('DELETE FROM frequencias WHERE id = $1 RETURNING *', [id]);
 
       if (result.rows.length === 0) {
-        return res.status(404).json({
-          success: false,
-          message: 'Frequência não encontrada'
-        });
-      }
-
-      res.json({
-        success: true,
-        message: 'Frequência deletada com sucesso'
-      });
-
-    } catch (error) {
-      console.error('Erro ao deletar frequência:', error);
-      res.status(500).json({
+      return res.status(404).json({
         success: false,
-        message: 'Erro interno do servidor'
+        message: 'Frequência não encontrada'
       });
     }
+
+    res.json({
+      success: true,
+        message: 'Frequência deletada com sucesso'
+    });
+
+  } catch (error) {
+    console.error('Erro ao deletar frequência:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Erro interno do servidor'
+    });
+  }
   },
 
   // Buscar frequências por atividade
@@ -399,31 +399,31 @@ const frequenciasController = {
         });
       }
 
-      const query = `
-        SELECT 
-          f.*,
-          a.nome as aluno_nome,
+    const query = `
+      SELECT 
+        f.*,
+        a.nome as aluno_nome,
           a.cpf as aluno_cpf
-        FROM frequencias f
-        JOIN alunos a ON f.aluno_id = a.id
-        WHERE f.atividade_id = $1 AND f.data_aula = $2
-        ORDER BY a.nome
-      `;
+      FROM frequencias f
+      JOIN alunos a ON f.aluno_id = a.id
+      WHERE f.atividade_id = $1 AND f.data_aula = $2
+      ORDER BY a.nome
+    `;
 
       const result = await db.query(query, [atividade_id, data]);
 
-      res.json({
-        success: true,
-        data: result.rows
-      });
+    res.json({
+      success: true,
+      data: result.rows
+    });
 
-    } catch (error) {
-      console.error('Erro ao buscar frequências por atividade:', error);
-      res.status(500).json({
-        success: false,
-        message: 'Erro interno do servidor'
-      });
-    }
+  } catch (error) {
+    console.error('Erro ao buscar frequências por atividade:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Erro interno do servidor'
+    });
+  }
   },
 
   // Buscar relatório de frequência
@@ -573,17 +573,17 @@ const frequenciasController = {
       let params = [];
       let paramIndex = 1;
 
-      if (data_inicio) {
-        whereConditions.push(`f.data_aula >= $${paramIndex}`);
-        params.push(data_inicio);
-        paramIndex++;
-      }
+    if (data_inicio) {
+      whereConditions.push(`f.data_aula >= $${paramIndex}`);
+      params.push(data_inicio);
+      paramIndex++;
+    }
 
-      if (data_fim) {
-        whereConditions.push(`f.data_aula <= $${paramIndex}`);
-        params.push(data_fim);
-        paramIndex++;
-      }
+    if (data_fim) {
+      whereConditions.push(`f.data_aula <= $${paramIndex}`);
+      params.push(data_fim);
+      paramIndex++;
+    }
 
       if (atividade_id) {
         whereConditions.push(`f.atividade_id = $${paramIndex}`);
@@ -603,15 +603,15 @@ const frequenciasController = {
         paramIndex++;
       }
 
-      const whereClause = whereConditions.join(' AND ');
+    const whereClause = whereConditions.join(' AND ');
 
       // Buscar frequências
-      const query = `
-        SELECT 
+    const query = `
+      SELECT 
           f.id,
-          f.data_aula,
-          f.presente,
-          f.justificativa,
+        f.data_aula,
+        f.presente,
+        f.justificativa,
           f.observacoes,
           f.data_registro,
           a.nome as aluno_nome,
@@ -619,16 +619,16 @@ const frequenciasController = {
           at.nome as atividade_nome,
           at.tipo as atividade_tipo,
           u.nome as registrado_por_nome
-        FROM frequencias f
-        JOIN alunos a ON f.aluno_id = a.id
-        JOIN atividades at ON f.atividade_id = at.id
-        LEFT JOIN usuarios u ON f.registrado_por = u.id
-        WHERE ${whereClause}
-        ORDER BY f.data_aula DESC, a.nome
-      `;
+      FROM frequencias f
+      JOIN alunos a ON f.aluno_id = a.id
+      JOIN atividades at ON f.atividade_id = at.id
+      LEFT JOIN usuarios u ON f.registrado_por = u.id
+      WHERE ${whereClause}
+      ORDER BY f.data_aula DESC, a.nome
+    `;
 
-      const result = await db.query(query, params);
-      
+    const result = await db.query(query, params);
+
       if (result.rows.length === 0) {
         return res.status(404).json({
           success: false,
@@ -911,10 +911,10 @@ const frequenciasController = {
 
       console.log(`✅ Importação concluída: ${sucessos} criadas, ${atualizados} atualizadas, ${erros.length} erros`);
 
-      res.json({
-        success: true,
+    res.json({
+      success: true,
         message: 'Importação concluída',
-        data: {
+      data: {
           total: dados.length,
           criadas: sucessos,
           atualizadas: atualizados,
@@ -993,10 +993,10 @@ const frequenciasController = {
 
       console.log('✅ Template de frequências gerado com sucesso');
 
-    } catch (error) {
+  } catch (error) {
       console.error('❌ Erro ao gerar template:', error);
-      res.status(500).json({
-        success: false,
+    res.status(500).json({
+      success: false,
         message: 'Erro ao gerar template'
       });
     }

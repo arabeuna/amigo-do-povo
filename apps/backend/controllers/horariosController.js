@@ -490,9 +490,12 @@ const horariosController = {
   // Download template para importação
   downloadTemplate: async (req, res) => {
     try {
+      console.log('🔧 Iniciando download do template de horários...');
       const { formato = 'excel' } = req.query;
+      console.log('📋 Formato solicitado:', formato);
 
       if (formato === 'csv') {
+        console.log('📄 Gerando template CSV...');
         // Template CSV
         const headers = [
           'atividade_id', 'atividade_nome', 'dia_semana', 'horario_inicio', 
@@ -507,22 +510,25 @@ const horariosController = {
 
         stringify([headers, exampleData], (err, output) => {
           if (err) {
-            console.error('Erro ao gerar template CSV:', err);
+            console.error('❌ Erro ao gerar template CSV:', err);
             return res.status(500).json({
               success: false,
               message: 'Erro ao gerar template CSV'
             });
           }
 
+          console.log('✅ Template CSV gerado com sucesso');
           res.setHeader('Content-Type', 'text/csv');
           res.setHeader('Content-Disposition', 'attachment; filename=template_horarios.csv');
           res.send(output);
         });
       } else {
+        console.log('📄 Gerando template Excel...');
         // Template Excel
         const workbook = new ExcelJS.Workbook();
         const worksheet = workbook.addWorksheet('Template Horários');
 
+        console.log('📋 Configurando colunas...');
         // Definir colunas
         worksheet.columns = [
           { header: 'atividade_id', key: 'atividade_id', width: 15 },
@@ -534,6 +540,7 @@ const horariosController = {
           { header: 'ativo', key: 'ativo', width: 10 }
         ];
 
+        console.log('📝 Adicionando dados de exemplo...');
         // Adicionar dados de exemplo
         const exampleData = [
           { atividade_id: 1, atividade_nome: 'Dança', dia_semana: 1, horario_inicio: '08:00', horario_fim: '09:00', vagas_disponiveis: 30, ativo: 'true' },
@@ -545,6 +552,7 @@ const horariosController = {
           worksheet.addRow(row);
         });
 
+        console.log('📋 Adicionando instruções...');
         // Adicionar instruções
         worksheet.insertRow(1, ['INSTRUÇÕES:']);
         worksheet.insertRow(2, ['1. atividade_id: ID da atividade (obrigatório)']);
@@ -556,6 +564,7 @@ const horariosController = {
         worksheet.insertRow(8, ['7. ativo: true/false (padrão: true)']);
         worksheet.insertRow(9, ['']);
 
+        console.log('🎨 Aplicando estilos...');
         // Estilizar
         worksheet.getRow(1).font = { bold: true, color: { argb: 'FF0000FF' } };
         worksheet.getRow(10).font = { bold: true };
@@ -565,16 +574,19 @@ const horariosController = {
           fgColor: { argb: 'FFE0E0E0' }
         };
 
+        console.log('📤 Configurando resposta...');
         // Configurar resposta
         res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
         res.setHeader('Content-Disposition', 'attachment; filename=template_horarios.xlsx');
 
+        console.log('💾 Escrevendo arquivo...');
         await workbook.xlsx.write(res);
+        console.log('✅ Template Excel enviado com sucesso');
         res.end();
       }
 
     } catch (error) {
-      console.error('Erro ao gerar template:', error);
+      console.error('❌ Erro ao gerar template:', error);
       res.status(500).json({
         success: false,
         message: 'Erro ao gerar template'
