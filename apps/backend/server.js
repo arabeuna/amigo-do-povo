@@ -150,19 +150,11 @@ app.get('/', (req, res) => {
 // Health check
 app.get('/api/health', async (req, res) => {
   try {
-    // Testar conexão com banco
-    const db = require('./config/database');
-    const dbResult = await db.query('SELECT NOW()');
-    
     res.json({
       success: true,
       message: 'Sistema Amigo do Povo - Backend funcionando!',
       timestamp: new Date().toISOString(),
       version: '1.0.0',
-      database: {
-        connected: true,
-        timestamp: dbResult.rows[0].now
-      },
       environment: {
         node_env: process.env.NODE_ENV || 'development',
         port: process.env.PORT || 5000,
@@ -174,19 +166,10 @@ app.get('/api/health', async (req, res) => {
     console.error('❌ Erro no health check:', error.message);
     res.status(503).json({
       success: false,
-      message: 'Sistema funcionando, mas banco de dados indisponível',
+      message: 'Erro no health check',
       timestamp: new Date().toISOString(),
       version: '1.0.0',
-      database: {
-        connected: false,
-        error: error.message
-      },
-      environment: {
-        node_env: process.env.NODE_ENV || 'development',
-        port: process.env.PORT || 5000,
-        db_host: process.env.DB_HOST || 'localhost',
-        db_name: process.env.DB_NAME || 'amigo_do_povo'
-      }
+      error: error.message
     });
   }
 });
@@ -374,7 +357,7 @@ app.use((error, req, res, next) => {
 // INICIALIZAÇÃO DO SERVIDOR
 // =====================================================
 
-// Testar conexão com banco antes de iniciar o servidor
+// Testar conexão com banco de forma assíncrona (não bloqueia a inicialização)
 const testDatabaseConnection = async () => {
   try {
     console.log('🔍 Testando conexão com banco de dados...');
@@ -391,13 +374,7 @@ const testDatabaseConnection = async () => {
 
 const startServer = async () => {
   try {
-    // Testar conexão com banco
-    const dbConnected = await testDatabaseConnection();
-    
-    if (!dbConnected) {
-      console.log('⚠️ Banco não conectado, mas iniciando servidor mesmo assim...');
-    }
-    
+    // Iniciar servidor imediatamente (sem aguardar conexão com banco)
     app.listen(PORT, () => {
       console.log(`🚀 Servidor rodando na porta ${PORT}`);
       console.log(`📊 Ambiente: ${process.env.NODE_ENV || 'development'}`);
@@ -416,6 +393,11 @@ const startServer = async () => {
       console.log(`🗄️ DB_NAME: ${process.env.DB_NAME || 'amigo_do_povo'}`);
       console.log(`🗄️ DB_USER: ${process.env.DB_USER || 'postgres'}`);
       console.log(`🗄️ DB_PASSWORD definido: ${process.env.DB_PASSWORD ? 'Sim' : 'NÃO'}`);
+      
+      // Testar conexão com banco em background (não bloqueia)
+      setTimeout(async () => {
+        await testDatabaseConnection();
+      }, 1000);
     });
   } catch (error) {
     console.error('💥 Erro ao iniciar servidor:', error);
