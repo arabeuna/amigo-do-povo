@@ -357,24 +357,9 @@ app.use((error, req, res, next) => {
 // INICIALIZAÇÃO DO SERVIDOR
 // =====================================================
 
-// Testar conexão com banco de forma assíncrona (não bloqueia a inicialização)
-const testDatabaseConnection = async () => {
-  try {
-    console.log('🔍 Testando conexão com banco de dados...');
-    const db = require('./config/database');
-    const result = await db.query('SELECT NOW()');
-    console.log('✅ Conexão com banco estabelecida:', result.rows[0].now);
-    return true;
-  } catch (error) {
-    console.error('❌ Erro na conexão com banco:', error.message);
-    console.error('❌ Código do erro:', error.code);
-    return false;
-  }
-};
-
 const startServer = async () => {
   try {
-    // Iniciar servidor imediatamente (sem aguardar conexão com banco)
+    // Iniciar servidor imediatamente (sem testes de banco)
     app.listen(PORT, () => {
       console.log(`🚀 Servidor rodando na porta ${PORT}`);
       console.log(`📊 Ambiente: ${process.env.NODE_ENV || 'development'}`);
@@ -393,11 +378,6 @@ const startServer = async () => {
       console.log(`🗄️ DB_NAME: ${process.env.DB_NAME || 'amigo_do_povo'}`);
       console.log(`🗄️ DB_USER: ${process.env.DB_USER || 'postgres'}`);
       console.log(`🗄️ DB_PASSWORD definido: ${process.env.DB_PASSWORD ? 'Sim' : 'NÃO'}`);
-      
-      // Testar conexão com banco em background (não bloqueia)
-      setTimeout(async () => {
-        await testDatabaseConnection();
-      }, 1000);
     });
   } catch (error) {
     console.error('💥 Erro ao iniciar servidor:', error);
