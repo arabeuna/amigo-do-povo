@@ -22,6 +22,7 @@ console.log('\n📋 Token decodificado:');
 console.log(JSON.stringify(jwt.decode(token), null, 2));
 console.log('\n⏰ Expira em: 24 horas');
 console.log('\n📋 JWT_SECRET usado:', JWT_SECRET);
+console.log('\n📏 JWT_SECRET length:', JWT_SECRET.length);
 
 async function generateNewToken() {
   try {

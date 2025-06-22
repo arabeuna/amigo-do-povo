@@ -1,9 +1,7 @@
 const jwt = require('jsonwebtoken');
-require('dotenv').config();
 
-// Configuração para produção (mesma do render.yaml)
+// JWT Secret do Render (produção)
 const JWT_SECRET = 'amigo_do_povo_jwt_secret_2024_super_secure_key_12345';
-const JWT_EXPIRES_IN = '24h';
 
 // Dados do usuário admin
 const userData = {
@@ -13,14 +11,15 @@ const userData = {
 };
 
 // Gerar token
-const token = jwt.sign(userData, JWT_SECRET, { expiresIn: JWT_EXPIRES_IN });
+const token = jwt.sign(userData, JWT_SECRET, { expiresIn: '24h' });
 
 console.log('🔑 Token gerado para produção:');
-console.log('📋 JWT_SECRET usado:', JWT_SECRET);
-console.log('👤 Dados do usuário:', userData);
-console.log('⏰ Expira em:', JWT_EXPIRES_IN);
-console.log('\n🎫 TOKEN:');
 console.log(token);
+console.log('\n📋 Informações do token:');
+console.log('User ID:', userData.userId);
+console.log('Email:', userData.email);
+console.log('Perfil:', userData.perfil);
+console.log('Secret usado:', JWT_SECRET);
 console.log('\n📝 Para usar no frontend:');
 console.log('localStorage.setItem("token", "' + token + '");');
 console.log('\n🔗 Para testar no curl:');
