@@ -258,8 +258,8 @@ const resetToken = () => {
   localStorage.removeItem('user');
   console.log('🔧 Token limpo do localStorage');
   
-  // Gerar novo token para produção
-  const productionToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjEsImVtYWlsIjoiYWRtaW5AYW1pZ29kb3Bvdm8uY29tIiwicGVyZmlsIjoiYWRtaW4iLCJpYXQiOjE3NTA1NTU2NDMsImV4cCI6MTc1MDY0MjA0M30.DuJYlhrdOu77EC5AK2L8_3wJDv0iAsgODIn4FTFb9wI';
+  // Gerar novo token para produção (válido por 24h)
+  const productionToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjEsImVtYWlsIjoiYWRtaW5AYW1pZ29kb3Bvdm8uY29tIiwicGVyZmlsIjoiYWRtaW4iLCJpYXQiOjE3NTA1NTYyOTEsImV4cCI6MTc1MDY0MjY5MX0.aNtaV1Ee8LjbiDVW0oRdaYVr9PJvBUrsLywhuZZAfmk';
   
   localStorage.setItem('token', productionToken);
   localStorage.setItem('user', JSON.stringify({
