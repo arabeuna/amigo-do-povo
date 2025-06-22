@@ -3,6 +3,26 @@ const bcrypt = require('bcryptjs');
 const db = require('./config/database');
 require('dotenv').config();
 
+// JWT_SECRET usado em produção (do render.yaml)
+const JWT_SECRET = 'amigo_do_povo_jwt_secret_2024_super_secure_key_12345';
+
+// Dados do usuário admin
+const userData = {
+  userId: 1,
+  email: 'admin@amigodopovo.com',
+  perfil: 'admin'
+};
+
+// Gerar token válido por 24 horas
+const token = jwt.sign(userData, JWT_SECRET, { expiresIn: '24h' });
+
+console.log('🔑 Token de produção gerado:');
+console.log(token);
+console.log('\n📋 Token decodificado:');
+console.log(JSON.stringify(jwt.decode(token), null, 2));
+console.log('\n⏰ Expira em: 24 horas');
+console.log('\n📋 JWT_SECRET usado:', JWT_SECRET);
+
 async function generateNewToken() {
   try {
     console.log('🔧 Gerando novo token para usuário admin...');

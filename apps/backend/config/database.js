@@ -12,7 +12,9 @@ const poolConfig = {
   connectionTimeoutMillis: 10000,
   ssl: process.env.NODE_ENV === 'production' ? {
     rejectUnauthorized: false
-  } : false
+  } : false,
+  // Forçar IPv4 para evitar problemas de conectividade
+  family: 4
 };
 
 // Only add password if it's not empty
@@ -26,7 +28,8 @@ console.log('🔧 Configuração do banco:', {
   database: poolConfig.database,
   user: poolConfig.user,
   isProduction: process.env.NODE_ENV === 'production',
-  originalHost: process.env.DB_HOST
+  originalHost: process.env.DB_HOST,
+  family: poolConfig.family
 });
 
 // Criar pool de conexões

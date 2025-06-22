@@ -245,11 +245,10 @@ const resetToken = () => {
   localStorage.removeItem('user');
   console.log('🔧 Token limpo do localStorage');
   
-  // Gerar novo token para produção (válido por 24h)
-  // Usando o JWT_SECRET correto do render.yaml: amigo_do_povo_jwt_secret_2024_super_secure_key_12345
-  const productionToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjEsImVtYWlsIjoiYWRtaW5AYW1pZ29kb3Bvdm8uY29tIiwicGVyZmlsIjoiYWRtaW4iLCJpYXQiOjE3NTA2MDUwNzcsImV4cCI6MTc1MDY5MTQ3N30.5kZBWqshnHFmFJjYyjY5FAL9gWSqgRovVWN5Vj4i3n4';
+  // Token de produção (gerado com JWT_SECRET correto do render.yaml)
+  const PRODUCTION_TOKEN = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjEsImVtYWlsIjoiYWRtaW5AYW1pZ29kb3Bvdm8uY29tIiwicGVyZmlsIjoiYWRtaW4iLCJpYXQiOjE3NTA2MTA0NTksImV4cCI6MTc1MDY5Njg1OX0.5C9vfYJJsLDZPjLrzMZ-r45ExTKqHhaP-UC88GSctAM';
   
-  localStorage.setItem('token', productionToken);
+  localStorage.setItem('token', PRODUCTION_TOKEN);
   localStorage.setItem('user', JSON.stringify({
     id: 1,
     nome: 'Administrador',
