@@ -634,12 +634,45 @@ const horariosController = {
           throw new Error(`Linha ${linha}: Dia da semana deve ser entre 1 e 7`);
         }
 
+        // Converter horários do Excel para formato HH:MM
+        let horarioInicioStr = '';
+        let horarioFimStr = '';
+
+        if (horario_inicio instanceof Date) {
+          // Se é um objeto Date do Excel, converter para HH:MM
+          const horas = horario_inicio.getHours().toString().padStart(2, '0');
+          const minutos = horario_inicio.getMinutes().toString().padStart(2, '0');
+          horarioInicioStr = `${horas}:${minutos}`;
+        } else {
+          // Se já é string, usar como está
+          horarioInicioStr = horario_inicio.toString();
+        }
+
+        if (horario_fim instanceof Date) {
+          // Se é um objeto Date do Excel, converter para HH:MM
+          const horas = horario_fim.getHours().toString().padStart(2, '0');
+          const minutos = horario_fim.getMinutes().toString().padStart(2, '0');
+          horarioFimStr = `${horas}:${minutos}`;
+        } else {
+          // Se já é string, usar como está
+          horarioFimStr = horario_fim.toString();
+        }
+
+        // Validar formato de hora
+        const horaRegex = /^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/;
+        if (!horaRegex.test(horarioInicioStr)) {
+          throw new Error(`Linha ${linha}: Formato de horário_inicio inválido. Use HH:MM (ex: 08:00)`);
+        }
+        if (!horaRegex.test(horarioFimStr)) {
+          throw new Error(`Linha ${linha}: Formato de horario_fim inválido. Use HH:MM (ex: 09:00)`);
+        }
+
         horarios.push({
           atividade_id: parseInt(atividade_id),
           atividade_nome,
           dia_semana: parseInt(dia_semana),
-          horario_inicio: horario_inicio.toString(),
-          horario_fim: horario_fim.toString(),
+          horario_inicio: horarioInicioStr,
+          horario_fim: horarioFimStr,
           vagas_disponiveis: vagas_disponiveis ? parseInt(vagas_disponiveis) : 30,
           ativo: ativo === 'true' || ativo === true
         });
