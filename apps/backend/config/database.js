@@ -74,10 +74,9 @@ const testConnection = async () => {
     console.log('👤 User:', process.env.DB_USER);
     console.log('🔐 Password definido:', !!process.env.DB_PASSWORD);
     
-    const result = await pool.query('SELECT NOW() as current_time, version() as db_version');
+    // Query simples igual ao health check
+    await pool.query('SELECT NOW()');
     console.log('✅ Conexão com banco estabelecida:', new Date().toISOString());
-    console.log('⏰ Hora do banco:', result.rows[0].current_time);
-    console.log('📋 Versão do banco:', result.rows[0].db_version);
     return true;
   } catch (error) {
     console.error('❌ Falha na conexão com o banco:', error.message);
