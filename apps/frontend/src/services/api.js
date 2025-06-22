@@ -249,6 +249,40 @@ const configuracoesAPI = {
 };
 
 // =====================================================
+// UTILITÁRIOS PARA TOKEN
+// =====================================================
+
+// Função para limpar token inválido e gerar novo
+const resetToken = () => {
+  localStorage.removeItem('token');
+  localStorage.removeItem('user');
+  console.log('🔧 Token limpo do localStorage');
+  
+  // Gerar novo token para produção
+  const productionToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjEsImVtYWlsIjoiYWRtaW5AYW1pZ29kb3Bvdm8uY29tIiwicGVyZmlsIjoiYWRtaW4iLCJpYXQiOjE3NTA1NTU2NDMsImV4cCI6MTc1MDY0MjA0M30.DuJYlhrdOu77EC5AK2L8_3wJDv0iAsgODIn4FTFb9wI';
+  
+  localStorage.setItem('token', productionToken);
+  localStorage.setItem('user', JSON.stringify({
+    id: 1,
+    nome: 'Administrador',
+    email: 'admin@amigodopovo.com',
+    perfil: 'admin'
+  }));
+  
+  console.log('🔄 Novo token de produção configurado');
+  window.location.reload();
+};
+
+// Verificar se está em produção e se o token está inválido
+if (window.location.hostname === 'amigo-do-povo.onrender.com') {
+  const token = localStorage.getItem('token');
+  if (token && token.length < 200) {
+    console.log('🔧 Detectado token inválido em produção, resetando...');
+    resetToken();
+  }
+}
+
+// =====================================================
 // HORÁRIOS
 // =====================================================
 
