@@ -14,7 +14,10 @@ const poolConfig = {
     rejectUnauthorized: false
   } : false,
   // Forçar IPv4 para evitar problemas de conectividade
-  family: 4
+  family: 4,
+  // Configurações adicionais para melhorar conectividade
+  keepAlive: true,
+  keepAliveInitialDelayMillis: 10000
 };
 
 // Only add password if it's not empty
@@ -29,7 +32,8 @@ console.log('🔧 Configuração do banco:', {
   user: poolConfig.user,
   isProduction: process.env.NODE_ENV === 'production',
   originalHost: process.env.DB_HOST,
-  family: poolConfig.family
+  family: poolConfig.family,
+  ssl: poolConfig.ssl ? 'enabled' : 'disabled'
 });
 
 // Criar pool de conexões
