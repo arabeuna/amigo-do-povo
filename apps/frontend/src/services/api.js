@@ -246,7 +246,7 @@ const resetToken = () => {
   console.log('🔧 Token limpo do localStorage');
   
   // Gerar novo token para produção (válido por 24h)
-  const productionToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjEsImVtYWlsIjoiYWRtaW5AYW1pZ29kb3Bvdm8uY29tIiwicGVyZmlsIjoiYWRtaW4iLCJpYXQiOjE3NTA1OTY4NzIsImV4cCI6MTc1MDY4MzI3Mn0.Z_TukVI2Djo6XGXJnc_9H7y_50s4-awu5vcM7IfcMTw';
+  const productionToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjEsImVtYWlsIjoiYWRtaW5AYW1pZ29kb3Bvdm8uY29tIiwicGVyZmlsIjoiYWRtaW4iLCJpYXQiOjE3NTA2MDUwNzcsImV4cCI6MTc1MDY5MTQ3N30.5kZBWqshnHFmFJjYyjY5FAL9gWSqgRovVWN5Vj4i3n4';
   
   localStorage.setItem('token', productionToken);
   localStorage.setItem('user', JSON.stringify({
