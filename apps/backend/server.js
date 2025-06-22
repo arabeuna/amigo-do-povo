@@ -5,7 +5,6 @@ const compression = require('compression');
 const rateLimit = require('express-rate-limit');
 const path = require('path');
 const multer = require('multer');
-require('dotenv').config();
 
 const { auth, authorize } = require('./middleware/auth');
 const authController = require('./controllers/authController');
@@ -380,6 +379,10 @@ const startServer = async () => {
     process.exit(1);
   }
 };
+
+if (process.env.NODE_ENV !== 'production') {
+  require('dotenv').config();
+}
 
 startServer();
 
