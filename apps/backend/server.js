@@ -46,7 +46,7 @@ app.use(cors({
 // Rate limiting mais permissivo para produção
 const limiter = rateLimit({
   windowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS) || 15 * 60 * 1000, // 15 minutos
-  max: parseInt(process.env.RATE_LIMIT_MAX_REQUESTS) || 1000, // Aumentado para 1000 requests por IP
+  max: parseInt(process.env.RATE_LIMIT_MAX_REQUESTS) || 2000, // Aumentado para 2000 requests por IP
   message: {
     success: false,
     message: 'Muitas requisições. Tente novamente em alguns minutos.'
@@ -54,24 +54,20 @@ const limiter = rateLimit({
   // Excluir arquivos estáticos do rate limiting
   skip: (req) => {
     // Não aplicar rate limiting para arquivos estáticos
-    const shouldSkip = req.path.includes('.') || 
+    return req.path.includes('.') || 
            req.path === '/favicon.ico' || 
            req.path === '/manifest.json' ||
            req.path.startsWith('/static/') ||
            req.path.startsWith('/assets/');
-    
-    if (shouldSkip) {
-      console.log(`🚫 Rate limiting pulado para: ${req.path}`);
-    }
-    
-    return shouldSkip;
   },
   // Headers personalizados para debug
   standardHeaders: true,
   legacyHeaders: false,
-  // Log quando rate limit é atingido
+  // Log quando rate limit é atingido (apenas em desenvolvimento)
   handler: (req, res) => {
-    console.log(`⚠️ Rate limit atingido para IP: ${req.ip}, Path: ${req.path}`);
+    if (process.env.NODE_ENV !== 'production') {
+      console.log(`⚠️ Rate limit atingido para IP: ${req.ip}, Path: ${req.path}`);
+    }
     res.status(429).json({
       success: false,
       message: 'Muitas requisições. Tente novamente em alguns minutos.'

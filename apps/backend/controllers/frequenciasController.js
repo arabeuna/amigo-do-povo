@@ -3,6 +3,7 @@ const db = require('../config/database');
 const XLSX = require('xlsx');
 const csv = require('csv-parser');
 const fs = require('fs');
+const path = require('path');
 
 const frequenciasController = {
   // Listar frequências com filtros
@@ -715,8 +716,18 @@ const frequenciasController = {
       }
 
       const { substituir = false } = req.body;
-      const filePath = req.file.path;
       const fileExtension = req.file.originalname.split('.').pop().toLowerCase();
+      
+      // Criar arquivo temporário
+      const tempDir = path.join(__dirname, '../uploads/temp');
+      if (!fs.existsSync(tempDir)) {
+        fs.mkdirSync(tempDir, { recursive: true });
+      }
+      
+      const tempFilePath = path.join(tempDir, `freq_import_${Date.now()}_${Math.random().toString(36).substring(7)}.${fileExtension}`);
+      
+      // Salvar arquivo temporariamente
+      fs.writeFileSync(tempFilePath, req.file.buffer);
       
       let dados = [];
 
@@ -725,7 +736,7 @@ const frequenciasController = {
         // Ler CSV
         const results = [];
         await new Promise((resolve, reject) => {
-          fs.createReadStream(filePath)
+          fs.createReadStream(tempFilePath)
             .pipe(csv())
             .on('data', (data) => results.push(data))
             .on('end', () => resolve())
@@ -734,13 +745,13 @@ const frequenciasController = {
         dados = results;
       } else if (['xlsx', 'xls'].includes(fileExtension)) {
         // Ler Excel
-        const workbook = XLSX.readFile(filePath);
+        const workbook = XLSX.readFile(tempFilePath);
         const sheetName = workbook.SheetNames[0];
         const worksheet = workbook.Sheets[sheetName];
         dados = XLSX.utils.sheet_to_json(worksheet);
       } else {
         // Limpar arquivo temporário
-        fs.unlinkSync(filePath);
+        fs.unlinkSync(tempFilePath);
         return res.status(400).json({
           success: false,
           message: 'Formato de arquivo não suportado. Use CSV ou Excel (.xlsx, .xls)'
@@ -748,7 +759,7 @@ const frequenciasController = {
       }
 
       if (dados.length === 0) {
-        fs.unlinkSync(filePath);
+        fs.unlinkSync(tempFilePath);
         return res.status(400).json({
           success: false,
           message: 'Arquivo vazio ou sem dados válidos'
@@ -907,14 +918,14 @@ const frequenciasController = {
       }
 
       // Limpar arquivo temporário
-      fs.unlinkSync(filePath);
+      fs.unlinkSync(tempFilePath);
 
       console.log(`✅ Importação concluída: ${sucessos} criadas, ${atualizados} atualizadas, ${erros.length} erros`);
 
-    res.json({
-      success: true,
+      res.json({
+        success: true,
         message: 'Importação concluída',
-      data: {
+        data: {
           total: dados.length,
           criadas: sucessos,
           atualizadas: atualizados,
@@ -930,9 +941,13 @@ const frequenciasController = {
       console.error('❌ Erro na importação:', error);
       
       // Limpar arquivo temporário se existir
-      if (req.file && req.file.path) {
+      if (req.file && req.file.buffer) {
         try {
-          fs.unlinkSync(req.file.path);
+          const tempDir = path.join(__dirname, '../uploads/temp');
+          const tempFilePath = path.join(tempDir, `freq_import_${Date.now()}_${Math.random().toString(36).substring(7)}.${req.file.originalname.split('.').pop().toLowerCase()}`);
+          if (fs.existsSync(tempFilePath)) {
+            fs.unlinkSync(tempFilePath);
+          }
         } catch (e) {
           console.error('Erro ao limpar arquivo temporário:', e);
         }
